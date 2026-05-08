@@ -1,0 +1,426 @@
+.adminPage {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 20px;
+}
+
+/* Topbar */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.topbarLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo {
+  width: 36px;
+  height: 36px;
+  background: var(--blue);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.subtitle {
+  font-size: 12px;
+  color: var(--text2);
+  margin-top: 2px;
+}
+
+.backLink {
+  padding: 7px 16px;
+  font-size: 13px;
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text2);
+  cursor: pointer;
+}
+
+.backLink:hover {
+  background: var(--bg2);
+}
+
+/* Admin tabs */
+.adminTabs {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.adminTab {
+  flex: 1;
+  padding: 11px 6px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text2);
+  background: var(--bg);
+  border-right: 1px solid var(--border);
+  border: none;
+  cursor: pointer;
+}
+
+.adminTab:last-child {
+  border-right: none;
+}
+
+.adminTab.active {
+  background: var(--blue);
+  color: #fff;
+}
+
+/* Section box */
+.sbox {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px;
+  margin-bottom: 14px;
+  background: var(--bg);
+}
+
+.sboxTitle {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+
+.sboxDesc {
+  font-size: 12px;
+  color: var(--text2);
+  margin-bottom: 14px;
+}
+
+/* List */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+}
+
+.rowMain {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.rowInfo {
+  font-size: 11px;
+  color: var(--text2);
+}
+
+.bi {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: var(--text2);
+}
+
+.bi:hover {
+  background: var(--bg2);
+}
+
+.biDel:hover {
+  background: var(--red-l);
+  border-color: #f09595;
+  color: var(--red);
+}
+
+.biEdit:hover {
+  background: var(--blue-l);
+  border-color: #378add;
+  color: var(--blue);
+}
+
+/* Add box */
+.abox {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  background: var(--bg2);
+}
+
+.fr {
+  margin-bottom: 12px;
+}
+
+.fr:last-child {
+  margin-bottom: 0;
+}
+
+.fl2 {
+  font-size: 11px;
+  color: var(--text2);
+  margin-bottom: 5px;
+  display: block;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.input,
+.select {
+  width: 100%;
+  font-size: 13px;
+  padding: 8px 11px;
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: inherit;
+  outline: none;
+}
+
+.input:focus,
+.select:focus {
+  border-color: var(--blue);
+}
+
+.btnP {
+  width: 100%;
+  padding: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  background: var(--blue);
+  color: #fff;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+.btnP:hover {
+  background: #0c447c;
+}
+
+.subList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.sub-chip,
+.machineChip {
+  padding: 4px 12px;
+  font-size: 11px;
+  border: 1px solid var(--border2);
+  border-radius: 99px;
+  background: var(--bg);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.mcDel {
+  cursor: pointer;
+  color: var(--text2);
+  background: none;
+  border: none;
+  font-size: 12px;
+  padding: 0;
+}
+
+.mcDel:hover {
+  color: var(--red);
+}
+
+.cdot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.colorGrid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 5px;
+  margin-top: 6px;
+}
+
+.cs {
+  width: 26px;
+  height: 26px;
+  border-radius: 5px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border 0.15s;
+}
+
+.cs.picked {
+  border-color: var(--text);
+}
+
+.fkey {
+  font-family: monospace;
+  font-size: 11px;
+  color: var(--text2);
+  background: var(--bg3);
+  padding: 2px 7px;
+  border-radius: 4px;
+  margin-right: 6px;
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+/* Excel toolbar */
+.xlToolbar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.xlBtn {
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid;
+}
+
+.xlImport {
+  background: var(--green-l);
+  color: var(--green);
+  border-color: #639922;
+}
+
+.xlImport:hover {
+  background: #cee9c1;
+}
+
+.xlExport {
+  background: var(--blue-l);
+  color: var(--blue);
+  border-color: #378add;
+}
+
+.xlExport:hover {
+  background: #cde3f5;
+}
+
+.xlTpl {
+  background: var(--bg2);
+  color: var(--text2);
+  border-color: var(--border2);
+}
+
+.xlTpl:hover {
+  background: var(--bg3);
+}
+
+.importHint {
+  font-size: 11px;
+  color: var(--text2);
+  margin-bottom: 12px;
+  padding: 9px 12px;
+  background: var(--bg2);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+/* Table */
+.tableWrap {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.tableWrap table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.tableWrap th {
+  padding: 9px 12px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text2);
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tableWrap td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tableWrap tr:last-child td {
+  border-bottom: none;
+}
+
+.tableWrap tr:hover td {
+  background: var(--bg2);
+}
+
+.badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 99px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.badgeOk {
+  background: var(--green-l);
+  color: var(--green);
+}
+
+.badgeObs {
+  background: var(--orange-l);
+  color: var(--orange);
+}
+
+.badgeEol {
+  background: var(--red-l);
+  color: var(--red);
+}

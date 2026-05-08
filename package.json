@@ -1,0 +1,25 @@
+{
+  "name": "parts-query-system",
+  "version": "1.0.0",
+  "description": "料號查詢系統 - SMT/Solar/Semiconductor",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "export": "next export"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.38.0",
+    "lucide-react": "^0.263.1",
+    "next": "^16.2.6",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.2.0",
+    "typescript": "^5.0.0"
+  }
+}
