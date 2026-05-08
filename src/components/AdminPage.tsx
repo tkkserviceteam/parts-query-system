@@ -312,8 +312,8 @@ export default function AdminPage({ onSwitchToFront }: { onSwitchToFront: () => 
         })}
       </div>
       {projectModal.open && (
-        <div style={UI_STYLE.overlay} as any>
-          <div style={UI_STYLE.modal} as any>
+		<div style={UI_STYLE.overlay}>
+		  <div style={UI_STYLE.modal}>
             <h3 style={{ margin: '0 0 20px 0' }}>{projectModal.mode === 'add' ? '✨ 新增' : '📝 編輯'}{projectModal.type === 'project' ? '主項目' : '子項目'}</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
               <input id="modal-name" className={styles.input} defaultValue={projectModal.data?.name || ''} placeholder="名稱" />
