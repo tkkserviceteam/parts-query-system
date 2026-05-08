@@ -360,103 +360,21 @@ export default function AdminPage({ onSwitchToFront }: { onSwitchToFront: () => 
     );
   };
 
-// --- 欄位管理彈窗狀態 ---
-  const [fieldModal, setFieldModal] = useState<{ open: boolean; mode: 'add' | 'edit'; data?: FieldDef }>({ open: false, mode: 'add' });
-
-  // --- Tab 2: 欄位管理渲染 ---
   const renderFieldsTab = () => (
     <div className={styles.sbox}>
-      <div className={styles.sboxTitle} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span>欄位管理定義</span>
-          <span style={{ background: '#eee', padding: '2px 8px', borderRadius: '12px', fontSize: '12px', color: '#444' }}>共 {fields.length} 個欄位</span>
-        </div>
-        {/* 新增按鈕移至最右邊 */}
-        <button style={{ ...UI_STYLE.btnBase, ...UI_STYLE.btnPrimary }} onClick={() => setFieldModal({ open: true, mode: 'add' })}>
-          ＋ 新增欄位
-        </button>
-      </div>
-
+      <div className={styles.sboxTitle}>欄位管理</div>
       <div className={styles.list}>
         {fields.map(f => (
-          <div key={f.id} className={styles.row} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid #eee' }}>
-            <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-              <span className={styles.fkey} style={{ color: '#999', width: '100px', fontSize: '13px', fontFamily: 'monospace' }}>{f.field_key}</span>
-              <span style={{ fontWeight: '600', fontSize: '15px' }}>{f.label}</span>
-            </div>
-            
-            {/* 各欄位最右邊的修改及刪除按鈕 */}
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button 
-                style={{ ...UI_STYLE.btnBase, ...UI_STYLE.btnCancel, padding: '5px 12px', fontSize: '13px' }} 
-                onClick={() => setFieldModal({ open: true, mode: 'edit', data: f })}
-              >
-                ✎ 修改
-              </button>
-              <button 
-                style={{ ...UI_STYLE.btnBase, background: '#fff5f5', color: '#e03131', border: '1px solid #ffc9c9', padding: '5px 12px', fontSize: '13px' }} 
-                onClick={async () => { 
-                  if(confirm(`確定要刪除欄位「${f.label}」嗎？這將導致該欄位的資料無法在介面顯示。`)) { 
-                    await supabase.from('field_defs').delete().eq('id', f.id); 
-                    loadAllData(); 
-                  }
-                }}
-              >
-                ✕ 刪除
-              </button>
-            </div>
+          <div key={f.id} className={styles.row}>
+            <span className={styles.fkey}>{f.field_key}</span><span>{f.label}</span>
           </div>
         ))}
       </div>
-
-      {/* 欄位編輯/新增彈窗 */}
-      {fieldModal.open && (
-        <div style={UI_STYLE.overlay as any}>
-          <div style={UI_STYLE.modal as any}>
-            <h3 style={{ marginTop: 0, marginBottom: '20px' }}>
-              {fieldModal.mode === 'add' ? '✨ 新增自定義欄位' : `📝 修改欄位: ${fieldModal.data?.label}`}
-            </h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-              <div>
-                <label style={{ fontSize: '13px', color: '#666', display: 'block', marginBottom: '5px' }}>顯示名稱 (Label)</label>
-                <input 
-                  id="fm-label" 
-                  className={styles.input} 
-                  defaultValue={fieldModal.data?.label || ''} 
-                  placeholder="例如：廠商、規格" 
-                />
-              </div>
-              {fieldModal.mode === 'add' && (
-                <div>
-                  <label style={{ fontSize: '13px', color: '#666', display: 'block', marginBottom: '5px' }}>資料庫 Key (建立後不可更改)</label>
-                  <input 
-                    id="fm-key" 
-                    className={styles.input} 
-                    placeholder="例如：vendor, specification" 
-                  />
-                </div>
-              )}
-            </div>
-            <div style={{ marginTop: '30px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-              <button style={{ ...UI_STYLE.btnBase, ...UI_STYLE.btnCancel }} onClick={() => setFieldModal({ ...fieldModal, open: false })}>取消</button>
-              <button style={{ ...UI_STYLE.btnBase, ...UI_STYLE.btnPrimary }} onClick={async () => {
-                const label = (document.getElementById('fm-label') as HTMLInputElement).value.trim();
-                if (!label) return alert('請輸入名稱');
-                
-                if (fieldModal.mode === 'add') {
-                  const key = (document.getElementById('fm-key') as HTMLInputElement).value.trim().toLowerCase();
-                  if (!key) return alert('請輸入 Key');
-                  await supabase.from('field_defs').insert([{ label, field_key: key, sort_order: fields.length }]);
-                } else {
-                  await supabase.from('field_defs').update({ label }).eq('id', fieldModal.data?.id);
-                }
-                setFieldModal({ ...fieldModal, open: false });
-                loadAllData();
-              }}>確認儲存</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <div className={styles.abox}>
+        <input id="nf-label" placeholder="名稱" className={styles.input} />
+        <input id="nf-key" placeholder="Key" className={styles.input} />
+        <button className={styles.btnP} onClick={addField}>新增</button>
+      </div>
     </div>
   );
 

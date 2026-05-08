@@ -92,7 +92,7 @@ export default function AdminPage({ onSwitchToFront }: { onSwitchToFront: () => 
     } catch (error) { console.error(error); }
   };
 
-  // --- 基礎增刪與業務邏輯 ---
+  // --- 基礎增刪與業務邏輯 (略，保持不變) ---
   const deleteProject = async (key: string) => {
     if (confirm('確定刪除項目？')) { await supabase.from('projects').delete().eq('key', key); loadAllData(); }
   };
@@ -114,7 +114,6 @@ export default function AdminPage({ onSwitchToFront }: { onSwitchToFront: () => 
     nameEl.value = '';
   };
 
-  // --- 修改後的匯入 Excel (增加筆數顯示) ---
   const importExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -158,13 +157,9 @@ export default function AdminPage({ onSwitchToFront }: { onSwitchToFront: () => 
         }).filter(r => r.pn);
         const uniqueMap = new Map();
         rawData.forEach(item => uniqueMap.set(item.pn, item));
-        const finalData = Array.from(uniqueMap.values());
-        const { error } = await supabase.from('parts').upsert(finalData, { onConflict: 'pn, project_key, sub_name' });
+        const { error } = await supabase.from('parts').upsert(Array.from(uniqueMap.values()), { onConflict: 'pn, project_key, sub_name' });
         if (error) throw error;
-        
-        // 修改：匯入成功通知加入筆數
-        alert(`✅ 匯入成功！共處理 ${finalData.length} 筆資料。\n歸檔至：${targetMain} / ${targetSub}`);
-        
+        alert(`✅ 匯入成功！歸檔至：${targetMain} / ${targetSub}`);
         setDaMain(targetMain);
         setDaSub(targetSub);
         loadPartsForSub();
@@ -174,10 +169,8 @@ export default function AdminPage({ onSwitchToFront }: { onSwitchToFront: () => 
     e.target.value = '';
   };
 
-  // --- 修改後的匯出 Excel (增加筆數顯示) ---
   const exportExcel = () => {
     if (parts.length === 0) { alert('目前沒有資料可匯出'); return; }
-    
     const exportData = parts.map(p => {
         const row: any = {};
         fields.forEach(f => {
@@ -188,14 +181,10 @@ export default function AdminPage({ onSwitchToFront }: { onSwitchToFront: () => 
         });
         return row;
     });
-
     const ws = XLSX.utils.json_to_sheet(exportData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'PartsData');
     XLSX.writeFile(wb, `料號資料_${daMain}_${daSub}.xlsx`);
-    
-    // 修改：匯出成功通知顯示實際筆數
-    alert(`✅ 匯出成功！已下載資料：共 ${exportData.length} 筆。`);
   };
 
   const handleSavePart = async (formData: any, isEdit: boolean) => {
@@ -360,107 +349,25 @@ export default function AdminPage({ onSwitchToFront }: { onSwitchToFront: () => 
     );
   };
 
-// --- 欄位管理彈窗狀態 ---
-  const [fieldModal, setFieldModal] = useState<{ open: boolean; mode: 'add' | 'edit'; data?: FieldDef }>({ open: false, mode: 'add' });
-
-  // --- Tab 2: 欄位管理渲染 ---
   const renderFieldsTab = () => (
     <div className={styles.sbox}>
-      <div className={styles.sboxTitle} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span>欄位管理定義</span>
-          <span style={{ background: '#eee', padding: '2px 8px', borderRadius: '12px', fontSize: '12px', color: '#444' }}>共 {fields.length} 個欄位</span>
-        </div>
-        {/* 新增按鈕移至最右邊 */}
-        <button style={{ ...UI_STYLE.btnBase, ...UI_STYLE.btnPrimary }} onClick={() => setFieldModal({ open: true, mode: 'add' })}>
-          ＋ 新增欄位
-        </button>
-      </div>
-
+      <div className={styles.sboxTitle}>欄位管理</div>
       <div className={styles.list}>
         {fields.map(f => (
-          <div key={f.id} className={styles.row} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid #eee' }}>
-            <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-              <span className={styles.fkey} style={{ color: '#999', width: '100px', fontSize: '13px', fontFamily: 'monospace' }}>{f.field_key}</span>
-              <span style={{ fontWeight: '600', fontSize: '15px' }}>{f.label}</span>
-            </div>
-            
-            {/* 各欄位最右邊的修改及刪除按鈕 */}
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button 
-                style={{ ...UI_STYLE.btnBase, ...UI_STYLE.btnCancel, padding: '5px 12px', fontSize: '13px' }} 
-                onClick={() => setFieldModal({ open: true, mode: 'edit', data: f })}
-              >
-                ✎ 修改
-              </button>
-              <button 
-                style={{ ...UI_STYLE.btnBase, background: '#fff5f5', color: '#e03131', border: '1px solid #ffc9c9', padding: '5px 12px', fontSize: '13px' }} 
-                onClick={async () => { 
-                  if(confirm(`確定要刪除欄位「${f.label}」嗎？這將導致該欄位的資料無法在介面顯示。`)) { 
-                    await supabase.from('field_defs').delete().eq('id', f.id); 
-                    loadAllData(); 
-                  }
-                }}
-              >
-                ✕ 刪除
-              </button>
-            </div>
+          <div key={f.id} className={styles.row}>
+            <span className={styles.fkey}>{f.field_key}</span><span>{f.label}</span>
           </div>
         ))}
       </div>
-
-      {/* 欄位編輯/新增彈窗 */}
-      {fieldModal.open && (
-        <div style={UI_STYLE.overlay as any}>
-          <div style={UI_STYLE.modal as any}>
-            <h3 style={{ marginTop: 0, marginBottom: '20px' }}>
-              {fieldModal.mode === 'add' ? '✨ 新增自定義欄位' : `📝 修改欄位: ${fieldModal.data?.label}`}
-            </h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-              <div>
-                <label style={{ fontSize: '13px', color: '#666', display: 'block', marginBottom: '5px' }}>顯示名稱 (Label)</label>
-                <input 
-                  id="fm-label" 
-                  className={styles.input} 
-                  defaultValue={fieldModal.data?.label || ''} 
-                  placeholder="例如：廠商、規格" 
-                />
-              </div>
-              {fieldModal.mode === 'add' && (
-                <div>
-                  <label style={{ fontSize: '13px', color: '#666', display: 'block', marginBottom: '5px' }}>資料庫 Key (建立後不可更改)</label>
-                  <input 
-                    id="fm-key" 
-                    className={styles.input} 
-                    placeholder="例如：vendor, specification" 
-                  />
-                </div>
-              )}
-            </div>
-            <div style={{ marginTop: '30px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-              <button style={{ ...UI_STYLE.btnBase, ...UI_STYLE.btnCancel }} onClick={() => setFieldModal({ ...fieldModal, open: false })}>取消</button>
-              <button style={{ ...UI_STYLE.btnBase, ...UI_STYLE.btnPrimary }} onClick={async () => {
-                const label = (document.getElementById('fm-label') as HTMLInputElement).value.trim();
-                if (!label) return alert('請輸入名稱');
-                
-                if (fieldModal.mode === 'add') {
-                  const key = (document.getElementById('fm-key') as HTMLInputElement).value.trim().toLowerCase();
-                  if (!key) return alert('請輸入 Key');
-                  await supabase.from('field_defs').insert([{ label, field_key: key, sort_order: fields.length }]);
-                } else {
-                  await supabase.from('field_defs').update({ label }).eq('id', fieldModal.data?.id);
-                }
-                setFieldModal({ ...fieldModal, open: false });
-                loadAllData();
-              }}>確認儲存</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <div className={styles.abox}>
+        <input id="nf-label" placeholder="名稱" className={styles.input} />
+        <input id="nf-key" placeholder="Key" className={styles.input} />
+        <button className={styles.btnP} onClick={addField}>新增</button>
+      </div>
     </div>
   );
 
-  // --- Tab 3: 零件類型管理 ---
+// --- Tab 3: 零件類型管理 (卡片佈局 + 10 色選擇) ---
   const [selectedTypeIds, setSelectedTypeIds] = useState<number[]>([]);
   const [typeModal, setTypeModal] = useState<{ open: boolean; mode: 'add' | 'edit'; data?: PartType | null; name: string; colorIndex: number }>({
     open: false, mode: 'add', name: '', colorIndex: 0
@@ -517,13 +424,23 @@ export default function AdminPage({ onSwitchToFront }: { onSwitchToFront: () => 
               <input 
                 type="checkbox" 
                 checked={selectedTypeIds.includes(t.id)} 
-                onChange={() => setSelectedTypeIds(prev => prev.includes(t.id) ? prev.filter(id => id !== t.id) : [...prev, i.id])} 
+                onChange={() => setSelectedTypeIds(prev => prev.includes(t.id) ? prev.filter(id => id !== t.id) : [...prev, t.id])} 
               />
               <div style={{ fontWeight: '800', fontSize: '16px' }}>{t.name}</div>
             </div>
             <div style={{ marginTop: '15px', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-              <button onClick={() => setTypeModal({ open: true, mode: 'edit', data: t, name: t.name, colorIndex: t.color_index })} style={{ ...UI_STYLE.btnBase, padding: '5px 10px', fontSize: '12px', border: '1px solid #ddd', background: '#fff' }}>✎ 編輯</button>
-              <button onClick={async () => { if(confirm('確定刪除此類型？')) { await supabase.from('part_types').delete().eq('id', t.id); loadAllData(); }}} style={{ ...UI_STYLE.btnBase, padding: '5px 10px', fontSize: '12px', color: '#e03131', border: '1px solid #ffc9c9', background: '#fff' }}>✕ 刪除</button>
+              <button 
+                onClick={() => setTypeModal({ open: true, mode: 'edit', data: t, name: t.name, colorIndex: t.color_index })} 
+                style={{ ...UI_STYLE.btnBase, padding: '5px 10px', fontSize: '12px', border: '1px solid #ddd', background: '#fff' }}
+              >
+                ✎ 編輯
+              </button>
+              <button 
+                onClick={async () => { if(confirm('確定刪除此類型？')) { await supabase.from('part_types').delete().eq('id', t.id); loadAllData(); }}} 
+                style={{ ...UI_STYLE.btnBase, padding: '5px 10px', fontSize: '12px', color: '#e03131', border: '1px solid #ffc9c9', background: '#fff' }}
+              >
+                ✕ 刪除
+              </button>
             </div>
           </div>
         ))}
@@ -632,8 +549,7 @@ export default function AdminPage({ onSwitchToFront }: { onSwitchToFront: () => 
         </div>
         <div className={styles.xlToolbar} style={{ marginTop: '15px' }}>
           <label className={styles.xlBtn} style={{ background: '#4CAF50' }}>⬆ 智能匯入 Excel<input type="file" hidden onChange={importExcel} /></label>
-          {/* 修改：匯出按鈕加入筆數顯示 */}
-          <button className={styles.xlBtn} style={{ background: '#666', color: 'white' }} onClick={exportExcel}>⬇ 匯出資料 ({parts.length} 筆)</button>
+          <button className={styles.xlBtn} style={{ background: '#666', color: 'white' }} onClick={exportExcel}>⬇ 匯出資料</button>
           <button className={styles.xlBtn} style={{ backgroundColor: '#2a69ac', color: 'white' }} onClick={() => setIsAddModalOpen(true)}>＋ 單筆新增</button>
         </div>
       </div>
@@ -642,7 +558,7 @@ export default function AdminPage({ onSwitchToFront }: { onSwitchToFront: () => 
         <div className={styles.sboxTitle} style={{ display: 'flex', justifyContent: 'space-between' }}>
           <span>資料列表 ({parts.length})</span>
           {selectedPartIds.length > 0 && (
-            <button onClick={() => { if(confirm(`確認批次刪除選中的 ${selectedPartIds.length} 筆資料？`)) supabase.from('parts').delete().in('id', selectedPartIds).then(() => loadPartsForSub()); }} 
+            <button onClick={() => { if(confirm('確認批次刪除？')) supabase.from('parts').delete().in('id', selectedPartIds).then(() => loadPartsForSub()); }} 
               style={{ ...UI_STYLE.btnBase, background: 'none', color: '#e03131', border: '1px solid #ffc9c9', padding: '4px 12px' }}>
               🗑 刪除選中 ({selectedPartIds.length})
             </button>
