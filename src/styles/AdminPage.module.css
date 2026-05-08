@@ -455,3 +455,241 @@
   background: var(--red-l);
   color: var(--red);
 }
+
+/* =========================================
+   MOBILE / TABLET RESPONSIVE
+========================================= */
+
+.pageContainer {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Table 可左右滑動 */
+
+.tableWrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tableWrap table {
+  min-width: 720px;
+}
+
+/* 避免按鈕文字被壓縮 */
+
+.xlBtn,
+.adminBtn,
+.adminTab,
+.bi,
+.btnP {
+  white-space: nowrap;
+}
+
+/* iPhone input 不自動 zoom */
+
+.input,
+.select {
+  font-size: 16px;
+  min-height: 42px;
+}
+
+/* 超大 modal 防爆 */
+
+.modalResponsive {
+  width: 90vw !important;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* =========================================
+   Tablet
+========================================= */
+
+@media (max-width: 900px) {
+
+  .adminPage {
+    padding: 18px 14px;
+  }
+
+  .grid2 {
+    grid-template-columns: 1fr;
+  }
+
+  .colorGrid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+
+}
+
+/* =========================================
+   Mobile
+========================================= */
+
+@media (max-width: 768px) {
+
+  .adminPage {
+    padding: 12px;
+  }
+
+  /* ===== Topbar ===== */
+
+  .topbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .topbarLeft {
+    width: 100%;
+  }
+
+  .title {
+    font-size: 15px;
+  }
+
+  .subtitle {
+    font-size: 11px;
+  }
+
+  .adminBtn,
+  .backLink {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  /* ===== Tabs ===== */
+
+  .adminTabs,
+  .navArea {
+    flex-wrap: wrap;
+    overflow: visible;
+  }
+
+  .adminTab,
+  .mainTab {
+    min-width: calc(50% - 1px);
+    flex: unset;
+    font-size: 12px;
+    padding: 12px 8px;
+  }
+
+  /* ===== Box ===== */
+
+  .sbox {
+    padding: 14px;
+  }
+
+  .sboxTitle {
+    font-size: 13px;
+  }
+
+  .sboxDesc {
+    font-size: 11px;
+  }
+
+  /* ===== Row ===== */
+
+  .row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .rowMain {
+    width: 100%;
+  }
+
+  /* ===== Grid ===== */
+
+  .grid2 {
+    grid-template-columns: 1fr;
+  }
+
+  /* ===== Excel Toolbar ===== */
+
+  .xlToolbar {
+    flex-direction: column;
+  }
+
+  .xlBtn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* ===== Color ===== */
+
+  .colorGrid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+
+  /* ===== Table 卡片化 ===== */
+
+  .mobileCardTable table,
+  .mobileCardTable thead,
+  .mobileCardTable tbody,
+  .mobileCardTable th,
+  .mobileCardTable td,
+  .mobileCardTable tr {
+    display: block;
+  }
+
+  .mobileCardTable thead {
+    display: none;
+  }
+
+  .mobileCardTable table {
+    min-width: unset;
+  }
+
+  .mobileCardTable tr {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 12px;
+    padding: 12px;
+    background: var(--bg);
+  }
+
+  .mobileCardTable td {
+    border: none;
+    padding: 7px 0;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 13px;
+  }
+
+  .mobileCardTable td::before {
+    font-weight: 700;
+    color: var(--text2);
+  }
+
+  .mobileCardTable td:nth-child(1)::before {
+    content: "選取";
+  }
+
+  .mobileCardTable td:nth-child(2)::before {
+    content: "料號";
+  }
+
+  .mobileCardTable td:nth-child(3)::before {
+    content: "品名";
+  }
+
+  .mobileCardTable td:nth-child(4)::before {
+    content: "機型";
+  }
+
+  .mobileCardTable td:nth-child(5)::before {
+    content: "狀態";
+  }
+
+  .mobileCardTable td:nth-child(6)::before {
+    content: "操作";
+  }
+
+}
