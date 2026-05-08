@@ -9,7 +9,8 @@ import styles from '@/styles/AdminPage.module.css';
 const UI_STYLE: Record<string, CSSProperties> = {
   btnBase: {
     border: 'none',
-    padding: '8px 18px',
+    padding: '8px 14px',
+	whiteSpace: 'nowrap',
     borderRadius: '8px',
     cursor: 'pointer',
     fontWeight: '500',
@@ -50,13 +51,16 @@ const UI_STYLE: Record<string, CSSProperties> = {
     zIndex: 9999,
   },
 
-  modal: {
-    background: '#fff',
-    padding: '30px',
-    borderRadius: '16px',
-    width: '480px',
-    boxShadow: '0 12px 40px rgba(0,0,0,0.2)',
-    position: 'relative',
+modal: {
+	  background: '#fff',
+	  padding: '24px',
+	  borderRadius: '16px',
+	  width: '90vw',
+	  maxWidth: '480px',
+	  maxHeight: '90vh',
+	  overflowY: 'auto',
+	  boxShadow: '0 12px 40px rgba(0,0,0,0.2)',
+      position: 'relative',
   },
 };
 
@@ -693,7 +697,7 @@ export default function AdminPage({ onSwitchToFront }: { onSwitchToFront: () => 
             </button>
           )}
         </div>
-        <div className={styles.tableWrap}>
+        <div className={`${styles.tableWrap} ${styles.mobileCardTable}`}>
           <table>
             <thead>
               <tr>
@@ -737,7 +741,7 @@ export default function AdminPage({ onSwitchToFront }: { onSwitchToFront: () => 
         ))}
       </div>
 
-      <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
+      <div className={styles.pageContainer}>
         {activeTab === 0 && renderProjectsTab()}
         {activeTab === 1 && renderMachinesTab()}
         {activeTab === 2 && renderFieldsTab()}
