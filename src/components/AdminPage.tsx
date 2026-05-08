@@ -6,7 +6,6 @@ import * as XLSX from 'xlsx';
 import styles from '@/styles/AdminPage.module.css';
 
 // --- 統一 UI 樣式配置 ---
-// --- 統一 UI 樣式配置 ---
 const UI_STYLE: Record<string, CSSProperties> = {
   btnBase: {
     border: 'none',
@@ -372,7 +371,7 @@ export default function AdminPage({ onSwitchToFront }: { onSwitchToFront: () => 
           {currentMachines.map(m => {
             const isSelected = selectedMachineIds.includes(m.id);
             return (
-              <div key={m.id} style={{ border: isSelected ? '2px solid #4a90e2' : '1px solid #1a1a1a', borderRadius: '12px', padding: '16px', position: 'relative' } as any}>
+              <div key={m.id} style={{ border: isSelected ? '2px solid #4a90e2' : '1px solid #1a1a1a', borderRadius: '12px', padding: '16px', position: 'relative' }}>
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <input type="checkbox" checked={isSelected} onChange={() => setSelectedMachineIds(prev => prev.includes(m.id) ? prev.filter(id => id !== m.id) : [...prev, m.id])} />
                   <div style={{ fontWeight: '800' }}>{m.name}</div>
@@ -387,7 +386,7 @@ export default function AdminPage({ onSwitchToFront }: { onSwitchToFront: () => 
         </div>
         {machineModal.open && (
             <div style={UI_STYLE.overlay}>
-                <div style={UI_STYLE.modal as any}>
+                <div style={UI_STYLE.modal}>
                     <h3>{machineModal.mode === 'add' ? '新增機型' : '編輯機型'}</h3>
                     <input className={styles.input} value={machineModal.name} onChange={e => setMachineModal({...machineModal, name: e.target.value})} />
                     <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
@@ -458,7 +457,7 @@ export default function AdminPage({ onSwitchToFront }: { onSwitchToFront: () => 
       {/* 欄位編輯/新增彈窗 */}
       {fieldModal.open && (
         <div style={UI_STYLE.overlay}>
-          <div style={UI_STYLE.modal as any}>
+          <div style={UI_STYLE.modal}>
             <h3 style={{ marginTop: 0, marginBottom: '20px' }}>
               {fieldModal.mode === 'add' ? '✨ 新增自定義欄位' : `📝 修改欄位: ${fieldModal.data?.label}`}
             </h3>
@@ -563,7 +562,7 @@ export default function AdminPage({ onSwitchToFront }: { onSwitchToFront: () => 
               <input 
                 type="checkbox" 
                 checked={selectedTypeIds.includes(t.id)} 
-                onChange={() => setSelectedTypeIds(prev => prev.includes(t.id) ? prev.filter(id => id !== t.id) : [...prev, i.id])} 
+                onChange={() => setSelectedTypeIds(prev => prev.includes(t.id) ? prev.filter(id => id !== t.id) : [...prev, t.id])} 
               />
               <div style={{ fontWeight: '800', fontSize: '16px' }}>{t.name}</div>
             </div>
@@ -577,7 +576,7 @@ export default function AdminPage({ onSwitchToFront }: { onSwitchToFront: () => 
 
       {typeModal.open && (
         <div style={UI_STYLE.overlay}>
-          <div style={UI_STYLE.modal as any}>
+          <div style={UI_STYLE.modal}>
             <h3 style={{ marginTop: 0, marginBottom: '20px' }}>{typeModal.mode === 'add' ? '✨ 新增零件類型' : '📝 編輯零件類型'}</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
               <div>
@@ -621,7 +620,7 @@ export default function AdminPage({ onSwitchToFront }: { onSwitchToFront: () => 
     const [form, setForm] = useState(data || {});
     return (
       <div style={UI_STYLE.overlay}>
-        <div style={{ ...UI_STYLE.modal, width: '450px', maxHeight: '90vh', overflowY: 'auto' } as any}>
+        <div style={{ ...UI_STYLE.modal, width: '450px', maxHeight: '90vh', overflowY: 'auto' }}>
           <h3 style={{ marginTop: 0, marginBottom: '20px', borderBottom: '1px solid #eee', paddingBottom: '10px' }}>{title}</h3>
           <div style={{ marginBottom: '15px' }}>
             <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '5px', fontSize: '14px' }}>料號 (P/N)</label>
