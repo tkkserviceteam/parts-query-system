@@ -314,37 +314,89 @@ export default function AdminPage({ onSwitchToFront }: { onSwitchToFront: () => 
           );
         })}
       </div>
-      {projectModal.open && (
-		<div style={UI_STYLE.overlay}>
-		  <div style={UI_STYLE.modal}>
-            <h3 style={{ margin: '0 0 20px 0' }}>{projectModal.mode === 'add' ? '✨ 新增' : '📝 編輯'}{projectModal.type === 'project' ? '主項目' : '子項目'}</h3>
+{projectModal.open && (
+        <div style={UI_STYLE.overlay}>
+          <div style={UI_STYLE.modal} className={styles.modalMobileFix}>
+            <h3 style={{ margin: '0 0 20px 0' }}>
+              {projectModal.mode === 'add' ? '✨ 新增' : '📝 編輯'}
+              {projectModal.type === 'project' ? '主項目' : '子項目'}
+            </h3>
+            
             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-              <input id="modal-name" className={styles.input} defaultValue={projectModal.data?.name || ''} placeholder="名稱" />
-              {projectModal.type === 'project' && projectModal.mode === 'add' && <input id="modal-key" className={styles.input} placeholder="Key (如: smt)" />}
+              <div>
+                <label style={{ fontSize: '13px', color: '#666', display: 'block', marginBottom: '5px' }}>名稱</label>
+                <input id="modal-name" className={styles.input} defaultValue={projectModal.data?.name || ''} placeholder="請輸入名稱" />
+              </div>
+
+              {/* 主項目專用欄位 */}
+              {projectModal.type === 'project' && projectModal.mode === 'add' && (
+                <div>
+                  <label style={{ fontSize: '13px', color: '#666', display: 'block', marginBottom: '5px' }}>Key (如: smt)</label>
+                  <input id="modal-key" className={styles.input} placeholder="建立後不可更改" />
+                </div>
+              )}
+
+              {/* --- 新增：子項目專用的「特定編碼開頭」欄位 --- */}
+              {projectModal.type === 'sub' && (
+                <div>
+                  <label style={{ fontSize: '13px', color: '#666', display: 'block', marginBottom: '5px' }}>特定編碼開頭 (可選)</label>
+                  <input 
+                    id="modal-prefix" 
+                    className={styles.input} 
+                    defaultValue={projectModal.data?.code_prefix || ''} 
+                    placeholder="例如: 1GKG" 
+                  />
+                  <small style={{ color: '#999', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                    設定後，前台將會自動合併此開頭與去小數點的料號
+                  </small>
+                </div>
+              )}
             </div>
+
             <div style={{ marginTop: '30px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
               <button style={{ ...UI_STYLE.btnBase, ...UI_STYLE.btnCancel }} onClick={() => setProjectModal({ ...projectModal, open: false })}>取消</button>
+              
               <button style={{ ...UI_STYLE.btnBase, ...UI_STYLE.btnPrimary }} onClick={async () => {
                 const name = (document.getElementById('modal-name') as HTMLInputElement).value.trim();
+                if (!name) return alert('請輸入名稱');
+
                 if (projectModal.type === 'project') {
                   if (projectModal.mode === 'add') {
                     const key = (document.getElementById('modal-key') as HTMLInputElement).value.trim().toLowerCase();
+                    if (!key) return alert('請輸入 Key');
                     await supabase.from('projects').insert([{ key, name, color_index: projects.length % 5 }]);
-                  } else await supabase.from('projects').update({ name }).eq('id', projectModal.data.id);
+                  } else {
+                    await supabase.from('projects').update({ name }).eq('id', projectModal.data.id);
+                  }
                 } else {
-                  if (projectModal.mode === 'add') await supabase.from('sub_projects').insert([{ name, project_key: projectModal.projectKey }]);
-                  else await supabase.from('sub_projects').update({ name }).eq('id', projectModal.data.id);
+                  // --- 新增：抓取特定編碼開頭並存入資料庫 ---
+                  const prefixInput = document.getElementById('modal-prefix') as HTMLInputElement;
+                  const code_prefix = prefixInput ? prefixInput.value.trim() : null;
+
+                  if (projectModal.mode === 'add') {
+                    await supabase.from('sub_projects').insert([{ 
+                      name, 
+                      project_key: projectModal.projectKey,
+                      code_prefix: code_prefix // 寫入資料庫
+                    }]);
+                  } else {
+                    await supabase.from('sub_projects').update({ 
+                      name,
+                      code_prefix: code_prefix // 更新資料庫
+                    }).eq('id', projectModal.data.id);
+                  }
                 }
-                setProjectModal({ ...projectModal, open: false }); loadAllData();
+                
+                setProjectModal({ ...projectModal, open: false }); 
+                loadAllData();
               }}>確認儲存</button>
             </div>
           </div>
         </div>
       )}
-    </div>
-  );
-
-  // --- Tab 1: 機型管理 ---
+        </div>
+		);
+	  // --- Tab 1: 機型管理 ---
   const [machineModal, setMachineModal] = useState<{ open: boolean; mode: 'add' | 'edit'; data?: Machine | null; projectKey: string; subName: string; name: string }>({open: false, mode: 'add', projectKey: '', subName: '', name: ''});
   
   const handleBatchDeleteMachines = async () => {
@@ -371,7 +423,7 @@ export default function AdminPage({ onSwitchToFront }: { onSwitchToFront: () => 
             <select value={daMain} onChange={e => setDaMain(e.target.value)} className={styles.select}>{projects.map(p => <option key={p.key} value={p.key}>{p.name}</option>)}</select>
             <select value={daSub} onChange={e => setDaSub(e.target.value)} className={styles.select}>{subProjects.filter(s => s.project_key === daMain).map(s => <option key={s.id} value={s.name}>{s.name}</option>)}</select>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '15px' }}>
+        <div className={styles.machineGridMobile} style={{display: 'grid',gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',gap: '15px'}}>
           {currentMachines.map(m => {
             const isSelected = selectedMachineIds.includes(m.id);
             return (
@@ -390,7 +442,7 @@ export default function AdminPage({ onSwitchToFront }: { onSwitchToFront: () => 
         </div>
         {machineModal.open && (
             <div style={UI_STYLE.overlay}>
-                <div style={UI_STYLE.modal}>
+                <div style={UI_STYLE.modal} className={styles.modalMobileFix}>
                     <h3>{machineModal.mode === 'add' ? '新增機型' : '編輯機型'}</h3>
                     <input className={styles.input} value={machineModal.name} onChange={e => setMachineModal({...machineModal, name: e.target.value})} />
                     <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
@@ -461,7 +513,7 @@ export default function AdminPage({ onSwitchToFront }: { onSwitchToFront: () => 
       {/* 欄位編輯/新增彈窗 */}
       {fieldModal.open && (
         <div style={UI_STYLE.overlay}>
-          <div style={UI_STYLE.modal}>
+          <div style={UI_STYLE.modal} className={styles.modalMobileFix}>
             <h3 style={{ marginTop: 0, marginBottom: '20px' }}>
               {fieldModal.mode === 'add' ? '✨ 新增自定義欄位' : `📝 修改欄位: ${fieldModal.data?.label}`}
             </h3>
@@ -580,7 +632,7 @@ export default function AdminPage({ onSwitchToFront }: { onSwitchToFront: () => 
 
       {typeModal.open && (
         <div style={UI_STYLE.overlay}>
-          <div style={UI_STYLE.modal}>
+          <div style={UI_STYLE.modal} className={styles.modalMobileFix}>
             <h3 style={{ marginTop: 0, marginBottom: '20px' }}>{typeModal.mode === 'add' ? '✨ 新增零件類型' : '📝 編輯零件類型'}</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
               <div>
@@ -666,64 +718,100 @@ export default function AdminPage({ onSwitchToFront }: { onSwitchToFront: () => 
     );
   };
 
-  // --- Tab 4: 渲染資料分頁 ---
-  const renderDataTab = () => (
-    <div>
-      <div className={styles.sbox}>
-        <div className={styles.sboxTitle}>批次工具與單筆操作</div>
-        <div className={styles.grid2}>
-          <select value={daMain} onChange={(e) => setDaMain(e.target.value)} className={styles.select}>
-            {projects.map(p => <option key={p.key} value={p.key}>{p.name}</option>)}
-          </select>
-          <select value={daSub} onChange={(e) => setDaSub(e.target.value)} className={styles.select}>
-            {subProjects.filter(s => s.project_key === daMain).map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
-          </select>
-        </div>
-        <div className={styles.xlToolbar} style={{ marginTop: '15px' }}>
-          <label className={styles.xlBtn} style={{ background: '#4CAF50' }}>⬆ 智能匯入 Excel<input type="file" hidden onChange={importExcel} /></label>
-          {/* 修改：匯出按鈕加入筆數顯示 */}
-          <button className={styles.xlBtn} style={{ background: '#666', color: 'white' }} onClick={exportExcel}>⬇ 匯出資料 ({parts.length} 筆)</button>
-          <button className={styles.xlBtn} style={{ backgroundColor: '#2a69ac', color: 'white' }} onClick={() => setIsAddModalOpen(true)}>＋ 單筆新增</button>
-        </div>
-      </div>
+// --- Tab 4: 渲染資料分頁 ---
+  const renderDataTab = () => {
+    // 1. 先定義過濾後的資料集
+    const filteredParts = parts.filter(p => {
+      if (!daSearch) return true;
+      const searchLower = daSearch.toLowerCase();
+      // 搜尋範圍：料號、品名、機型
+      return (
+        p.pn?.toLowerCase().includes(searchLower) ||
+        p.name?.toLowerCase().includes(searchLower) ||
+        p.machine?.toLowerCase().includes(searchLower)
+      );
+    });
 
-      <div className={styles.sbox}>
-        <div className={styles.sboxTitle} style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <span>資料列表 ({parts.length})</span>
-          {selectedPartIds.length > 0 && (
-            <button onClick={() => { if(confirm(`確認批次刪除選中的 ${selectedPartIds.length} 筆資料？`)) supabase.from('parts').delete().in('id', selectedPartIds).then(() => loadPartsForSub()); }} 
-              style={{ ...UI_STYLE.btnBase, background: 'none', color: '#e03131', border: '1px solid #ffc9c9', padding: '4px 12px' }}>
-              🗑 刪除選中 ({selectedPartIds.length})
-            </button>
-          )}
+    return (
+      <div>
+        <div className={styles.sbox}>
+          <div className={styles.sboxTitle}>批次工具與單筆操作</div>
+          <div className={styles.grid2}>
+            <select value={daMain} onChange={(e) => setDaMain(e.target.value)} className={styles.select}>
+              {projects.map(p => <option key={p.key} value={p.key}>{p.name}</option>)}
+            </select>
+            <select value={daSub} onChange={(e) => setDaSub(e.target.value)} className={styles.select}>
+              {subProjects.filter(s => s.project_key === daMain).map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+            </select>
+          </div>
+          <div className={styles.xlToolbar} style={{ marginTop: '15px' }}>
+            <label className={styles.xlBtn} style={{ background: '#4CAF50' }}>⬆ 智能匯入 Excel<input type="file" hidden onChange={importExcel} /></label>
+            <button className={styles.xlBtn} style={{ background: '#666', color: 'white' }} onClick={exportExcel}>⬇ 匯出資料 ({parts.length} 筆)</button>
+            <button className={styles.xlBtn} style={{ backgroundColor: '#2a69ac', color: 'white' }} onClick={() => setIsAddModalOpen(true)}>＋ 單筆新增</button>
+          </div>
         </div>
-        <div className={`${styles.tableWrap} ${styles.mobileCardTable}`}>
-          <table>
-            <thead>
-              <tr>
-                <th><input type="checkbox" onChange={e => setSelectedPartIds(e.target.checked ? parts.map(p => p.id) : [])} checked={parts.length > 0 && selectedPartIds.length === parts.length} /></th>
-                <th>料號</th><th>品名</th><th>機型</th><th>狀態</th><th>編輯</th>
-              </tr>
-            </thead>
-            <tbody>
-              {parts.map(p => (
-                <tr key={p.id}>
-                  <td><input type="checkbox" checked={selectedPartIds.includes(p.id)} onChange={() => setSelectedPartIds(prev => prev.includes(p.id) ? prev.filter(i => i !== p.id) : [...prev, p.id])} /></td>
-                  <td style={{ fontWeight: 'bold' }}>{p.pn}</td>
-                  <td>{p.name}</td><td>{p.machine}</td>
-                  <td><span className={p.status === 'active' ? styles.badgeOk : styles.badgeObs}>{p.status === 'active' ? '有效' : '停產'}</span></td>
-                  <td><button onClick={() => setEditingPart(p)} style={{ border: 'none', background: 'none', cursor: 'pointer' }}>✎</button></td>
+
+        <div className={styles.sbox}>
+          <div className={styles.sboxTitle} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>資料列表 ({filteredParts.length} / {parts.length})</span>
+            {selectedPartIds.length > 0 && (
+              <button onClick={() => { if(confirm(`確認批次刪除選中的 ${selectedPartIds.length} 筆資料？`)) supabase.from('parts').delete().in('id', selectedPartIds).then(() => loadPartsForSub()); }} 
+                style={{ ...UI_STYLE.btnBase, background: 'none', color: '#e03131', border: '1px solid #ffc9c9', padding: '4px 12px' }}>
+                🗑 刪除選中 ({selectedPartIds.length})
+              </button>
+            )}
+          </div>
+
+          {/* --- 新增搜尋框區塊 --- */}
+          <div style={{ marginBottom: '15px', position: 'relative' }}>
+            <input 
+              className={styles.input} 
+              value={daSearch} 
+              onChange={e => setDaSearch(e.target.value)} 
+              placeholder="搜尋料號、品名或機型..." 
+              style={{ paddingLeft: '35px' }}
+            />
+            <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#999' }}>🔍</span>
+            {daSearch && (
+              <button 
+                onClick={() => setDaSearch('')}
+                style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', border: 'none', background: 'none', cursor: 'pointer', color: '#999' }}
+              >✕</button>
+            )}
+          </div>
+
+          <div className={`${styles.tableWrap} ${styles.mobileCardTable}`}>
+            <table>
+              <thead>
+                <tr>
+                  {/* 注意：全選框也應對應過濾後的資料 */}
+                  <th><input type="checkbox" onChange={e => setSelectedPartIds(e.target.checked ? filteredParts.map(p => p.id) : [])} checked={filteredParts.length > 0 && selectedPartIds.length === filteredParts.length} /></th>
+                  <th>料號</th><th>品名</th><th>機型</th><th>狀態</th><th>編輯</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {filteredParts.map(p => (
+                  <tr key={p.id}>
+                    <td><input type="checkbox" checked={selectedPartIds.includes(p.id)} onChange={() => setSelectedPartIds(prev => prev.includes(p.id) ? prev.filter(i => i !== p.id) : [...prev, p.id])} /></td>
+                    <td style={{ fontWeight: 'bold' }}>{p.pn}</td>
+                    <td>{p.name}</td><td>{p.machine}</td>
+                    <td><span className={p.status === 'active' ? styles.badgeOk : styles.badgeObs}>{p.status === 'active' ? '有效' : '停產'}</span></td>
+                    <td><button onClick={() => setEditingPart(p)} style={{ border: 'none', background: 'none', cursor: 'pointer' }}>✎</button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {filteredParts.length === 0 && (
+              <div style={{ padding: '40px', textAlign: 'center', color: '#999' }}>找不到匹配的資料</div>
+            )}
+          </div>
         </div>
-      </div>
 
-      {isAddModalOpen && <PartModal title="✨ 新增零件資料" data={{ status: 'active' }} onClose={() => setIsAddModalOpen(false)} onSave={(fd: any) => handleSavePart(fd, false)} />}
-      {editingPart && <PartModal title={`📝 編輯料號: ${editingPart.pn}`} data={editingPart} onClose={() => setEditingPart(null)} onSave={(fd: any) => handleSavePart(fd, true)} />}
-    </div>
-  );
+        {isAddModalOpen && <PartModal title="✨ 新增零件資料" data={{ status: 'active' }} onClose={() => setIsAddModalOpen(false)} onSave={(fd: any) => handleSavePart(fd, false)} />}
+        {editingPart && <PartModal title={`📝 編輯料號: ${editingPart.pn}`} data={editingPart} onClose={() => setEditingPart(null)} onSave={(fd: any) => handleSavePart(fd, true)} />}
+      </div>
+    );
+  };
 
   return (
     <div className={styles.adminPage}>

@@ -24,10 +24,7 @@ export default function FrontPage({ onSwitchToAdmin }: { onSwitchToAdmin: () => 
   const [searchQ, setSearchQ] = useState('');
   const [selectedPn, setSelectedPn] = useState<string | null>(null);
 
-  // 初始化載入資料
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
     try {
@@ -43,64 +40,71 @@ export default function FrontPage({ onSwitchToAdmin }: { onSwitchToAdmin: () => 
       if (fieldsRes.data) setFields(fieldsRes.data);
       if (typesRes.data) setPartTypes(typesRes.data);
 
-      // 設定預設子項目
       if (projectsRes.data && projectsRes.data.length > 0) {
         const firstMain = projectsRes.data[0].key;
         setCurMain(firstMain);
         const firstSub = subRes.data?.find((s) => s.project_key === firstMain)?.name;
         if (firstSub) setCurSub(firstSub);
       }
-    } catch (error) {
-      console.error('Error loading data:', error);
-    }
+    } catch (error) { console.error('Error loading data:', error); }
   };
 
-  // 載入該子項目的料號
   useEffect(() => {
-    if (curMain && curSub) {
-      loadParts();
-    }
+    if (curMain && curSub) { loadParts(); }
   }, [curMain, curSub]);
 
   const loadParts = async () => {
     try {
-      const query = supabase
-        .from('parts')
-        .select('*')
-        .eq('project_key', curMain)
-        .eq('sub_name', curSub);
-
-      const res = await query;
+      const res = await supabase.from('parts').select('*').eq('project_key', curMain).eq('sub_name', curSub);
       if (res.data) setParts(res.data);
-    } catch (error) {
-      console.error('Error loading parts:', error);
-    }
+    } catch (error) { console.error('Error loading parts:', error); }
   };
 
-  // 搜尋過濾
   const filteredParts = parts.filter(
     (p) =>
       !searchQ ||
-      [p.pn, p.name, p.vendor, p.machine, p.model].some((v) =>
+      [p.pn, p.name, p.vendor, p.machine, p.model, p.remark].some((v) =>
         (v || '').toLowerCase().includes(searchQ.toLowerCase())
       )
   );
+// 在 FrontPage 組件內新增處理函數
 
+const handleCodeClick = (formattedCode: string) => {
+  // 1. 複製料號到剪貼簿
+  navigator.clipboard.writeText(formattedCode).then(() => {
+    // 可以選擇性加入一個簡單的提示，例如：alert('已複製特定編碼: ' + formattedCode);
+  });
+
+  // 2. 將網頁轉往指定目標 (根據你的描述是轉往該錯誤頁面或特定外部連結)
+  // 注意：若該連結是固定的，直接填寫 URL；若需要帶參數，可自行拼接
+  window.location.href = "http://your-iis-server-address/error-page-path"; 
+};
+
+// 轉換規則函數
+const getSpecialCode = (pn: string, prefix: string | undefined) => {
+  if (!prefix) return null;
+  // 規則：prefix + (料號移除所有 ".")
+  const cleanPn = pn.replace(/\./g, '');
+  return `${prefix}${cleanPn}`;
+};
   const curProject = projects.find((p) => p.key === curMain);
   const ci = curProject?.color_index || 0;
   const colorClass = `ci${ci}`;
+  const selectedPart = parts.find((p) => p.pn === selectedPn);
 
-  const selectedPart = filteredParts.find((p) => p.pn === selectedPn);
   const getTypeName = (typeId?: number) => {
     if (!typeId) return '—';
     return partTypes.find((t) => t.id === typeId)?.name || '—';
   };
 
+  const getStatusLabel = (status: string) => {
+    const mapping: any = { 'active': '有效', 'obs': '停產預告', 'eol': '已停產' };
+    return mapping[status] || status;
+  };
+
   const getStatusBadge = (status: string) => {
-    const badgeClass =
-      status === 'active' ? 'badge-ok' : status === 'obs' ? 'badge-obs' : 'badge-eol';
-    const label = status === 'active' ? '有效' : status === 'obs' ? '停產預告' : '已停產';
-    return <span className={`badge ${badgeClass}`}>{label}</span>;
+    const badgeClass = status === 'active' ? 'badge-ok' : status === 'obs' ? 'badge-obs' : 'badge-eol';
+    return <span className={`badge ${badgeClass}`}>{getStatusLabel(status)}</span>;
   };
 
   return (
@@ -113,12 +117,9 @@ export default function FrontPage({ onSwitchToAdmin }: { onSwitchToAdmin: () => 
             <div className={styles.subtitle}>SMT · Solar · Semiconductor</div>
           </div>
         </div>
-        <button className={styles.adminBtn} onClick={onSwitchToAdmin}>
-          ⚙ 後台管理
-        </button>
+        <button className={styles.adminBtn} onClick={onSwitchToAdmin}>⚙ 後台管理</button>
       </div>
 
-      {/* Main tabs */}
       <div className={styles.navArea}>
         {projects.map((p) => (
           <button
@@ -127,77 +128,56 @@ export default function FrontPage({ onSwitchToAdmin }: { onSwitchToAdmin: () => 
             onClick={() => {
               setCurMain(p.key);
               const firstSub = subProjects.find((s) => s.project_key === p.key)?.name;
-              if (firstSub) setCurSub(firstSub);
+              setCurSub(firstSub || '');
+              setSelectedPn(null); // 切換項目時清空選擇
             }}
           >
             {p.name}
-            <div className={styles.tabCount}>
-              {subProjects.filter((s) => s.project_key === p.key).length} 子項目
-            </div>
+            <div className={styles.tabCount}>{subProjects.filter((s) => s.project_key === p.key).length} 子項目</div>
           </button>
         ))}
       </div>
 
-      {/* Sub tabs */}
       <div className={styles.subTabs}>
-        {subProjects
-          .filter((s) => s.project_key === curMain)
-          .map((s) => (
-            <button
-              key={s.id}
-              className={`${styles.subTab} ${s.name === curSub ? `${styles.active} ${styles[colorClass]}` : ''}`}
-              onClick={() => setCurSub(s.name)}
-            >
-              {s.name}
-            </button>
-          ))}
+        {subProjects.filter((s) => s.project_key === curMain).map((s) => (
+          <button
+            key={s.id}
+            className={`${styles.subTab} ${s.name === curSub ? `${styles.active} ${styles[colorClass]}` : ''}`}
+            onClick={() => { setCurSub(s.name); setSelectedPn(null); }}
+          >
+            {s.name}
+          </button>
+        ))}
       </div>
 
-      {/* DB Badge */}
       <div className={`${styles.dbBadge} ${styles[colorClass]}`}>
         <span className={`${styles.dbDot} ${styles[colorClass]}`}></span>
-        <span>獨立資料庫：{curProject?.name} / {curSub}</span>
+        <span>目前庫別：{curProject?.name} / {curSub}</span>
       </div>
 
-      {/* Metrics */}
       <div className={styles.metrics}>
-        <div className={styles.metric}>
-          <div className={styles.label}>本庫料號數</div>
-          <div className={styles.value}>{parts.length}</div>
-        </div>
-        <div className={styles.metric}>
-          <div className={styles.label}>有效料號</div>
-          <div className={styles.value}>{parts.filter((p) => p.status === 'active').length}</div>
-        </div>
-        <div className={styles.metric}>
-          <div className={styles.label}>查詢結果</div>
-          <div className={styles.value}>{filteredParts.length}</div>
-        </div>
+        <div className={styles.metric}><div className={styles.label}>總料號數</div><div className={styles.value}>{parts.length}</div></div>
+        <div className={styles.metric}><div className={styles.label}>查詢結果</div><div className={styles.value}>{filteredParts.length}</div></div>
       </div>
 
-      {/* Search */}
       <div className={styles.searchWrap}>
         <input
           type="text"
-          placeholder="搜尋料號、品名、廠商、機型…"
+          placeholder="快速搜尋料號、品名、廠商..."
           value={searchQ}
           onChange={(e) => setSearchQ(e.target.value)}
           className={styles.searchInput}
         />
       </div>
 
-      {/* Table */}
+{/* --- 極簡化表格：僅呈現核心三項 --- */}
       <div className={styles.tableWrap}>
         <table>
           <thead>
             <tr>
-              <th>料號</th>
-              <th>品名</th>
-              <th>廠商</th>
-              <th>機型</th>
-              <th>型號</th>
-              <th>零件類型</th>
-              <th>狀態</th>
+              <th style={{ width: '30%' }}>料號</th>
+              <th style={{ width: '40%' }}>品名</th>
+              <th style={{ width: '30%' }}>對應機型</th>
             </tr>
           </thead>
           <tbody>
@@ -206,61 +186,87 @@ export default function FrontPage({ onSwitchToAdmin }: { onSwitchToAdmin: () => 
                 key={p.id}
                 onClick={() => setSelectedPn(p.pn)}
                 className={p.pn === selectedPn ? styles.selected : ''}
+                style={{ cursor: 'pointer' }}
               >
                 <td>
                   <span className={`${styles.pn} ${styles[colorClass]}`}>{p.pn}</span>
                 </td>
                 <td>{p.name}</td>
-                <td>{p.vendor || '—'}</td>
                 <td>{p.machine || '—'}</td>
-                <td>{p.model || '—'}</td>
-                <td>
-                  <span
-                    className={styles.typePill}
-                    style={{
-                      backgroundColor: COLORS[ci].bg,
-                      color: COLORS[ci].text,
-                    }}
-                  >
-                    {getTypeName(p.type_id)}
-                  </span>
-                </td>
-                <td>{getStatusBadge(p.status)}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      {/* Detail Panel */}
-      <div className={styles.detail}>
-        <div className={styles.detailHead}>
-          <span>料號詳細資料</span>
-          <span className={styles.detailPn}>{selectedPart?.pn || '—'}</span>
-        </div>
-        <div className={styles.detailBody}>
-          {selectedPart ? (
-            <>
-              <div className={styles.dcol}>
-                {fields.map((f) => (
-                  <div key={f.id}>
-                    <div className={styles.fl}>{f.label}</div>
-                    <div className={styles.fv}>
-                      {f.field_key === 'type_id'
-                        ? getTypeName(selectedPart.type_id)
-                        : f.field_key === 'status'
-                          ? getStatusBadge(selectedPart.status).props.children
-                          : (selectedPart as any)[f.field_key] || '—'}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
-          ) : (
-            <div className={styles.placeholder}>點選料號查看詳細資料</div>
-          )}
-        </div>
+      {/* 詳情面板：點擊料號後呈現 */}
+{/* Detail Panel */}
+<div className={styles.detail}>
+  <div className={styles.detailHead}>
+    <span>詳細資料</span>
+    
+    {/* --- 以下為新增：右側顯示特定編碼與點擊功能 --- */}
+    <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+      
+      {selectedPart && (
+        (() => {
+          // 1. 找到當前的子項目物件，取得其設定的 prefix
+          const subProj = subProjects.find(s => s.project_key === curMain && s.name === curSub);
+          const prefix = (subProj as any)?.code_prefix; // 假設你在資料庫新增的欄位叫 code_prefix
+
+          if (prefix) {
+            // 2. 規則轉換：Prefix + 料號(去掉所有的點)
+            const specialCode = prefix + selectedPart.pn.replace(/\./g, '');
+            
+            return (
+              <button 
+			  className={styles.specialCodeBtn}
+			  onClick={() => {
+				// 1. 複製到剪貼簿
+				navigator.clipboard.writeText(specialCode);
+				
+				// 2. 開啟獨立漂浮小視窗 (寬800, 高600)
+				const targetUrl = "http://211.75.18.228/tkkweb/inventory/list.asp"; 
+				window.open(
+				  targetUrl, 
+				  'SpecialSystemWindow', // 視窗名稱
+				  'width=800,height=600,left=200,top=100,resizable=yes,scrollbars=yes' // 視窗屬性
+				);
+			  }}
+			>
+			  公司料號：{specialCode} 📋
+</button>
+            );
+          }
+          return null;
+        })()
+      )}
+    </div>
+    {/* --- 新增結束 --- */}
+  </div>
+
+  <div className={styles.detailBody}>
+    {selectedPart ? (
+      /* --- 這裡修改了樣式類別，讓間距變窄 --- */
+      <div className={styles.dgrid}> 
+        {fields.map((f) => (
+          <div key={f.id} className={styles.ditem}>
+            <div className={styles.fl}>{f.label}</div>
+            <div className={styles.fv}>
+              {f.field_key === 'type_id'
+                ? getTypeName(selectedPart.type_id)
+                : f.field_key === 'status'
+                  ? getStatusBadge(selectedPart.status).props.children // 只拿文字
+                  : (selectedPart as any)[f.field_key] || '—'}
+            </div>
+          </div>
+        ))}
       </div>
+    ) : (
+      <div className={styles.placeholder}>點選料號查看詳細資料</div>
+    )}
+  </div>
+</div>
     </div>
   );
 }
