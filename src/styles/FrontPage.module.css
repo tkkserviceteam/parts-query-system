@@ -246,17 +246,26 @@
 .searchInput {
   width: 100%;
   padding: 9px 12px;
-  font-size: 13px;
+  font-size: 13px; /* 電腦版維持你原本的 13px */
   border: 1px solid var(--border2);
   border-radius: 8px;
   background: var(--bg);
   outline: none;
+  /* 加上這行防止 iOS 原生的內建陰影/外觀 */
+  -webkit-appearance: none; 
 }
 
 .searchInput:focus {
   border-color: var(--blue);
 }
 
+/* --- 新增：專門針對手機版的防縮放設定 --- */
+@media screen and (max-width: 768px) {
+  .searchInput {
+    font-size: 16px !important; /* 強制手機版字體大於等於 16px，防止自動放大 */
+    padding: 10px 12px; /* 稍微把框加高一點點，配合變大的字體，讓視覺更舒服 */
+  }
+}
 /* Table */
 .tableWrap {
   border: 1px solid var(--border);
