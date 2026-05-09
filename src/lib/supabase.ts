@@ -57,4 +57,5 @@ export interface Part {
   status: 'active' | 'obs' | 'eol';
   description?: string;
   extra_data?: Record<string, any>;
+  remark?: string;
 }
