@@ -409,3 +409,92 @@
   color: var(--text3);
   font-size: 13px;
 }
+
+/* 詳情區塊容器 */
+.detail {
+  margin-top: 20px;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #eee;
+  overflow: hidden;
+}
+
+/* 詳細資料網格：縮小間距 */
+.dgrid {
+  display: grid;
+  /* 強制每行顯示 3 或 4 欄，視寬度而定 */
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  /* 關鍵：第一數字是行距(上下)，第二個是列距(左右) */
+  gap: 4px 12px; 
+  padding: 12px 20px;
+}
+
+/* 每一項資料的容器 */
+.ditem {
+  display: flex;
+  align-items: baseline; /* 讓標籤跟內容底部對齊 */
+  gap: 8px;
+  border-bottom: 1px solid #f8f8f8; /* 極淡的底線 */
+  padding: 2px 0; /* 縮減上下內邊距 */
+}
+
+/* 標籤文字 (例如：品名、廠商) */
+.fl {
+  font-size: 11px;
+  color: #999;
+  width: 60px; /* 固定寬度，讓冒號對齊 */
+  flex-shrink: 0;
+}
+
+/* 內容文字 */
+.fv {
+  font-size: 13px;
+  color: #333;
+  font-weight: 500;
+}
+
+/* 特定編碼按鈕 */
+.specialCodeBtn {
+  background: #f0f7ff;
+  border: 1px dashed #4a90e2;
+  color: #185fa5;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.specialCodeBtn:hover {
+  background: #4a90e2;
+  color: #fff;
+}
+
+/* 緊湊型詳細資料佈局 */
+.dgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 4px 12px; /* 極窄的行間距 */
+  padding: 12px 20px;
+}
+
+.ditem {
+  border-bottom: 1px solid #f5f5f5;
+  padding: 4px 0;
+  display: flex;
+  align-items: baseline; /* 讓標籤與內容對齊 */
+  gap: 8px;
+}
+
+.fl {
+  font-size: 11px;
+  color: #999;
+  width: 65px; /* 固定寬度讓冒號對齊 */
+  flex-shrink: 0;
+}
+
+.fv {
+  font-size: 13px;
+  color: #333;
+  font-weight: 500;
+}

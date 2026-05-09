@@ -1,7 +1,13 @@
+/* =========================
+   MOBILE FIX COMPLETE
+========================= */
+
 .adminPage {
+  width: 100%;
   max-width: 1100px;
   margin: 0 auto;
   padding: 24px 20px;
+  box-sizing: border-box;
 }
 
 /* Topbar */
@@ -12,12 +18,14 @@
   margin-bottom: 20px;
   padding-bottom: 16px;
   border-bottom: 1px solid var(--border);
+  gap: 12px;
 }
 
 .topbarLeft {
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 0;
 }
 
 .logo {
@@ -29,11 +37,13 @@
   align-items: center;
   justify-content: center;
   font-size: 18px;
+  flex-shrink: 0;
 }
 
 .title {
   font-size: 16px;
   font-weight: 600;
+  word-break: break-word;
 }
 
 .subtitle {
@@ -56,16 +66,20 @@
   background: var(--bg2);
 }
 
-/* Admin tabs */
-.adminTabs {
+/* Tabs */
+
+.adminTabs,
+.navArea {
   display: flex;
   border: 1px solid var(--border);
   border-radius: 10px;
   overflow: hidden;
   margin-bottom: 20px;
+  width: 100%;
 }
 
-.adminTab {
+.adminTab,
+.mainTab {
   flex: 1;
   padding: 11px 6px;
   text-align: center;
@@ -76,9 +90,11 @@
   border-right: 1px solid var(--border);
   border: none;
   cursor: pointer;
+  min-width: 0;
 }
 
-.adminTab:last-child {
+.adminTab:last-child,
+.mainTab:last-child {
   border-right: none;
 }
 
@@ -96,35 +112,18 @@
   color: var(--text2);
   cursor: pointer;
   transition: all 0.15s;
+  white-space: nowrap;
 }
 
-.navArea {
-  display: flex;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  overflow: hidden;
-  margin-bottom: 16px;
-}
+/* Section */
 
-.mainTab {
-  flex: 1;
-  padding: 10px 8px;
-  text-align: center;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text2);
-  background: var(--bg);
-  border-right: 1px solid var(--border);
-  border: none;
-}
-
-/* Section box */
 .sbox {
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 18px;
   margin-bottom: 14px;
   background: var(--bg);
+  overflow: hidden;
 }
 
 .sboxTitle {
@@ -140,6 +139,7 @@
 }
 
 /* List */
+
 .list {
   display: flex;
   flex-direction: column;
@@ -161,12 +161,16 @@
   flex: 1;
   font-size: 13px;
   font-weight: 500;
+  min-width: 0;
+  word-break: break-word;
 }
 
 .rowInfo {
   font-size: 11px;
   color: var(--text2);
 }
+
+/* Buttons */
 
 .bi {
   width: 28px;
@@ -180,6 +184,7 @@
   justify-content: center;
   font-size: 14px;
   color: var(--text2);
+  flex-shrink: 0;
 }
 
 .bi:hover {
@@ -198,43 +203,21 @@
   color: var(--blue);
 }
 
-/* Add box */
-.abox {
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 14px;
-  background: var(--bg2);
-}
-
-.fr {
-  margin-bottom: 12px;
-}
-
-.fr:last-child {
-  margin-bottom: 0;
-}
-
-.fl2 {
-  font-size: 11px;
-  color: var(--text2);
-  margin-bottom: 5px;
-  display: block;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
+/* Input */
 
 .input,
 .select {
   width: 100%;
-  font-size: 13px;
-  padding: 8px 11px;
+  font-size: 16px;
+  padding: 10px 12px;
   border: 1px solid var(--border2);
   border-radius: 8px;
   background: var(--bg);
   color: var(--text);
   font-family: inherit;
   outline: none;
+  box-sizing: border-box;
+  min-height: 44px;
 }
 
 .input:focus,
@@ -244,8 +227,8 @@
 
 .btnP {
   width: 100%;
-  padding: 9px;
-  font-size: 13px;
+  padding: 11px;
+  font-size: 14px;
   font-weight: 600;
   border: none;
   border-radius: 8px;
@@ -255,9 +238,7 @@
   margin-top: 8px;
 }
 
-.btnP:hover {
-  background: #0c447c;
-}
+/* Chips */
 
 .subList {
   display: flex;
@@ -287,15 +268,14 @@
   padding: 0;
 }
 
-.mcDel:hover {
-  color: var(--red);
-}
-
 .cdot {
   width: 10px;
   height: 10px;
   border-radius: 50%;
+  flex-shrink: 0;
 }
+
+/* Grid */
 
 .colorGrid {
   display: grid;
@@ -325,6 +305,7 @@
   padding: 2px 7px;
   border-radius: 4px;
   margin-right: 6px;
+  word-break: break-all;
 }
 
 .grid2 {
@@ -334,7 +315,8 @@
   margin-bottom: 14px;
 }
 
-/* Excel toolbar */
+/* Toolbar */
+
 .xlToolbar {
   display: flex;
   gap: 8px;
@@ -343,67 +325,32 @@
 }
 
 .xlBtn {
-  padding: 8px 16px;
-  font-size: 12px;
+  padding: 10px 16px;
+  font-size: 13px;
   font-weight: 500;
   border-radius: 8px;
   cursor: pointer;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   border: 1px solid;
-}
-
-.xlImport {
-  background: var(--green-l);
-  color: var(--green);
-  border-color: #639922;
-}
-
-.xlImport:hover {
-  background: #cee9c1;
-}
-
-.xlExport {
-  background: var(--blue-l);
-  color: var(--blue);
-  border-color: #378add;
-}
-
-.xlExport:hover {
-  background: #cde3f5;
-}
-
-.xlTpl {
-  background: var(--bg2);
-  color: var(--text2);
-  border-color: var(--border2);
-}
-
-.xlTpl:hover {
-  background: var(--bg3);
-}
-
-.importHint {
-  font-size: 11px;
-  color: var(--text2);
-  margin-bottom: 12px;
-  padding: 9px 12px;
-  background: var(--bg2);
-  border-radius: 8px;
-  border: 1px solid var(--border);
+  white-space: nowrap;
 }
 
 /* Table */
+
 .tableWrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   border: 1px solid var(--border);
   border-radius: 10px;
-  overflow: hidden;
-  margin-bottom: 16px;
 }
 
 .tableWrap table {
   width: 100%;
+  min-width: 720px;
   border-collapse: collapse;
   font-size: 13px;
 }
@@ -416,21 +363,12 @@
   color: var(--text2);
   background: var(--bg2);
   border-bottom: 1px solid var(--border);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
 .tableWrap td {
   padding: 10px 12px;
   border-bottom: 1px solid var(--border);
-}
-
-.tableWrap tr:last-child td {
-  border-bottom: none;
-}
-
-.tableWrap tr:hover td {
-  background: var(--bg2);
+  word-break: break-word;
 }
 
 .badge {
@@ -456,63 +394,33 @@
   color: var(--red);
 }
 
-/* =========================================
-   MOBILE / TABLET RESPONSIVE
-========================================= */
+/* Page */
 
 .pageContainer {
-  padding: 20px;
+  padding: 20px 0;
   max-width: 1200px;
   margin: 0 auto;
 }
 
-/* Table 可左右滑動 */
+/* Modal */
 
-.tableWrap {
-  width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+.modalResponsive,
+.modalMobileFix {
+  width: 92vw !important;
+  max-width: 480px !important;
+  max-height: 90vh !important;
+  overflow-y: auto !important;
+  box-sizing: border-box;
 }
 
-.tableWrap table {
-  min-width: 720px;
-}
-
-/* 避免按鈕文字被壓縮 */
-
-.xlBtn,
-.adminBtn,
-.adminTab,
-.bi,
-.btnP {
-  white-space: nowrap;
-}
-
-/* iPhone input 不自動 zoom */
-
-.input,
-.select {
-  font-size: 16px;
-  min-height: 42px;
-}
-
-/* 超大 modal 防爆 */
-
-.modalResponsive {
-  width: 90vw !important;
-  max-width: 480px;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-/* =========================================
-   Tablet
-========================================= */
+/* =========================
+   TABLET
+========================= */
 
 @media (max-width: 900px) {
 
   .adminPage {
-    padding: 18px 14px;
+    padding: 16px;
   }
 
   .grid2 {
@@ -525,22 +433,25 @@
 
 }
 
-/* =========================================
-   Mobile
-========================================= */
+/* =========================
+   MOBILE
+========================= */
 
 @media (max-width: 768px) {
 
   .adminPage {
-    padding: 12px;
+    padding: 10px;
   }
 
-  /* ===== Topbar ===== */
+  .pageContainer {
+    padding: 10px 0;
+  }
+
+  /* Topbar */
 
   .topbar {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
+    align-items: stretch;
   }
 
   .topbarLeft {
@@ -548,37 +459,33 @@
   }
 
   .title {
-    font-size: 15px;
-  }
-
-  .subtitle {
-    font-size: 11px;
+    font-size: 14px;
+    line-height: 1.4;
   }
 
   .adminBtn,
   .backLink {
     width: 100%;
-    justify-content: center;
     text-align: center;
   }
 
-  /* ===== Tabs ===== */
+  /* Tabs */
 
-  .adminTabs,
-  .navArea {
+  .navArea,
+  .adminTabs {
     flex-wrap: wrap;
-    overflow: visible;
+    overflow: hidden;
   }
 
   .adminTab,
   .mainTab {
-    min-width: calc(50% - 1px);
+    width: 50%;
     flex: unset;
-    font-size: 12px;
-    padding: 12px 8px;
+    border-bottom: 1px solid var(--border);
+    padding: 12px 6px;
   }
 
-  /* ===== Box ===== */
+  /* Section */
 
   .sbox {
     padding: 14px;
@@ -586,31 +493,23 @@
 
   .sboxTitle {
     font-size: 13px;
+    line-height: 1.4;
+    gap: 10px;
+    flex-wrap: wrap;
   }
 
-  .sboxDesc {
-    font-size: 11px;
-  }
-
-  /* ===== Row ===== */
+  /* Row */
 
   .row {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
+    align-items: stretch;
   }
 
   .rowMain {
     width: 100%;
   }
 
-  /* ===== Grid ===== */
-
-  .grid2 {
-    grid-template-columns: 1fr;
-  }
-
-  /* ===== Excel Toolbar ===== */
+  /* Toolbar */
 
   .xlToolbar {
     flex-direction: column;
@@ -618,16 +517,25 @@
 
   .xlBtn {
     width: 100%;
-    justify-content: center;
   }
 
-  /* ===== Color ===== */
+  /* Grid */
+
+  .grid2 {
+    grid-template-columns: 1fr;
+  }
 
   .colorGrid {
     grid-template-columns: repeat(5, 1fr);
   }
 
-  /* ===== Table 卡片化 ===== */
+  /* Machine Card */
+
+  .machineGridMobile {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Table -> Card */
 
   .mobileCardTable table,
   .mobileCardTable thead,
@@ -636,6 +544,7 @@
   .mobileCardTable td,
   .mobileCardTable tr {
     display: block;
+    width: 100%;
   }
 
   .mobileCardTable thead {
@@ -656,9 +565,10 @@
 
   .mobileCardTable td {
     border: none;
-    padding: 7px 0;
+    padding: 8px 0;
     display: flex;
     justify-content: space-between;
+    align-items: center;
     gap: 10px;
     font-size: 13px;
   }
@@ -666,6 +576,7 @@
   .mobileCardTable td::before {
     font-weight: 700;
     color: var(--text2);
+    flex-shrink: 0;
   }
 
   .mobileCardTable td:nth-child(1)::before {
@@ -690,6 +601,63 @@
 
   .mobileCardTable td:nth-child(6)::before {
     content: "操作";
+  }
+
+  /* Modal */
+
+  .modalResponsive,
+  .modalMobileFix {
+    width: 94vw !important;
+    padding: 18px !important;
+    border-radius: 14px !important;
+  }
+
+  /* Button Group */
+
+  .mobileBtnGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+}
+
+/* =========================
+   SMALL MOBILE
+========================= */
+
+@media (max-width: 480px) {
+
+  .adminPage {
+    padding: 8px;
+  }
+
+  .sbox {
+    padding: 12px;
+  }
+
+  .title {
+    font-size: 13px;
+  }
+
+  .adminTab,
+  .mainTab {
+    font-size: 11px;
+    padding: 11px 4px;
+  }
+
+  .xlBtn {
+    font-size: 12px;
+    padding: 10px;
+  }
+
+  .tableWrap td {
+    font-size: 12px;
+  }
+
+  .input,
+  .select {
+    font-size: 16px;
   }
 
 }
