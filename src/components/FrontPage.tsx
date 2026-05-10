@@ -292,26 +292,14 @@ export default function FrontPage({ onSwitchToAdmin }: { onSwitchToAdmin: () => 
                 if (prefix) {
                   const specialCode = prefix + selectedPart.pn.replace(/\./g, '');
                   return (
-<button
-  onClick={() => {
-    const targetUrl =
-      "http://211.75.18.228/tkkweb/inventory/list.asp";
-
-    const newWindow = window.open(
-      targetUrl,
-      "_blank"
-    );
-
-    // iOS 被擋時 fallback
-    if (!newWindow) {
-      alert(
-        "請點右上角 → 使用 Safari 開啟"
-      );
-    }
-  }}
+<a
+  href="http://211.75.18.228/tkkweb/inventory/list.asp"
+  target="_blank"
+  rel="noopener noreferrer"
+  className={styles.specialCodeBtn}
 >
-  開啟系統
-</button>
+  公司料號：{specialCode}
+</a>
                   );
                 }
                 return null;
