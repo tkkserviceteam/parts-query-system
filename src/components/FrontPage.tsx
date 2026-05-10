@@ -67,6 +67,31 @@ export default function FrontPage({ onSwitchToAdmin }: { onSwitchToAdmin: () => 
         (v || '').toLowerCase().includes(searchQ.toLowerCase())
       )
   );
+  
+// ... 其他狀態宣告 ...
+  const [logs, setLogs] = useState<any[]>([]); // 儲存多筆歷史紀錄
+  const [showLogModal, setShowLogModal] = useState(false); // 控制彈窗顯示
+
+  useEffect(() => {
+    loadData();
+    loadLogs(); // 改為載入多筆日誌
+  }, []);
+
+  const loadLogs = async () => {
+    try {
+      // 一次抓取最近的 20 筆紀錄
+      const { data } = await supabase
+        .from('system_logs')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(20);
+      if (data && data.length > 0) {
+        setLogs(data);
+      }
+    } catch (error) {
+      console.error('無更新紀錄', error);
+    }
+  };
 // 在 FrontPage 組件內新增處理函數
 
 const handleCodeClick = (formattedCode: string) => {
@@ -267,6 +292,57 @@ const getSpecialCode = (pn: string, prefix: string | undefined) => {
     )}
   </div>
 </div>
-    </div>
+{/* --- 右下角最後更新資訊 (改為可點擊) --- */}
+      {logs.length > 0 && (
+        <div 
+          className={styles.updateWidget} 
+          onClick={() => setShowLogModal(true)}
+          title="點擊查看詳細更新歷史"
+        >
+          <div className={styles.uwDot}></div>
+          <div className={styles.uwContent}>
+            <div className={styles.uwTitle}>系統最後更新 <span>(點擊查看詳情)</span></div>
+            <div className={styles.uwText}>時間：{new Date(logs[0].created_at).toLocaleString('zh-TW')}</div>
+            <div className={styles.uwText}>人員：{logs[0].updater_name}</div>
+            <div className={styles.uwText}>項目：[{logs[0].action}] {logs[0].update_item}</div>
+          </div>
+        </div>
+      )}
+
+      {/* --- 更新歷史紀錄彈窗 --- */}
+      {showLogModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999 }} onClick={() => setShowLogModal(false)}>
+          <div style={{ background: '#fff', padding: '25px', borderRadius: '16px', width: '550px', maxHeight: '80vh', overflowY: 'hidden', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ margin: '0 0 15px 0', borderBottom: '2px solid #eee', paddingBottom: '10px' }}>📜 系統更新歷史紀錄</h3>
+            
+            {/* 歷史清單列表 */}
+            <div style={{ overflowY: 'auto', flexGrow: 1, paddingRight: '10px' }}>
+              {logs.map((log) => (
+                <div key={log.id} style={{ marginBottom: '15px', paddingBottom: '15px', borderBottom: '1px dashed #eee' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#185fa5' }}>[{log.action}] {log.update_item}</span>
+                    <span style={{ fontSize: '12px', color: '#888' }}>{new Date(log.created_at).toLocaleString('zh-TW')}</span>
+                  </div>
+                  <div style={{ fontSize: '13px', color: '#666', marginBottom: '6px' }}>👤 操作人員：{log.updater_name}</div>
+                  
+                  {/* 若有 details (例如匯入了哪些料號)，顯示在這裡 */}
+                  {log.details && (
+                    <div style={{ background: '#f8f9fa', padding: '10px', borderRadius: '6px', fontSize: '12px', color: '#555', whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
+                      {log.details}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div style={{ marginTop: '20px', textAlign: 'right' }}>
+              <button style={{ padding: '8px 20px', borderRadius: '8px', border: '1px solid #ddd', background: '#f5f5f5', cursor: 'pointer', fontWeight: 'bold' }} onClick={() => setShowLogModal(false)}>
+                關閉
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div> // 這是原本最外層的 </div>
   );
 }

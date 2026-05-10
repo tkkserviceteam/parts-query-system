@@ -141,6 +141,55 @@ export default function AdminPage({ onSwitchToFront }: { onSwitchToFront: () => 
     } catch (error) { console.error(error); }
   };
 
+// --- 登入驗證狀態 ---
+  const [session, setSession] = useState<any>(null);
+  const [username, setUsername] = useState(''); // 改為 username
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  // 檢查登入狀態 (維持不變)
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => setSession(session));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    // 👉 關鍵技巧：背後自動補上虛擬網域，騙過 Supabase
+    const virtualEmail = `${username}@system.local`; 
+    
+    const { error } = await supabase.auth.signInWithPassword({ 
+      email: virtualEmail, 
+      password 
+    });
+    
+    if (error) {
+      alert('登入失敗，請檢查帳號或密碼是否正確');
+    }
+    setLoading(false);
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
+
+// --- 寫入日誌的共用函數 ---
+  const logUpdate = async (action: string, item: string, details: string = '') => {
+    if (!session) return;
+    const updater_name = session.user.email.split('@')[0]; 
+    await supabase.from('system_logs').insert([{ 
+      updater_name, 
+      update_item: item, 
+      action,
+      details // 寫入詳細資料
+    }]);
+  };
+
   // --- 基礎增刪與業務邏輯 ---
   const deleteProject = async (key: string) => {
     if (confirm('確定刪除項目？')) { await supabase.from('projects').delete().eq('key', key); loadAllData(); }
@@ -163,7 +212,7 @@ export default function AdminPage({ onSwitchToFront }: { onSwitchToFront: () => 
     nameEl.value = '';
   };
 
-  // --- 修改後的匯入 Excel (增加筆數顯示) ---
+// --- 修改後的匯入 Excel (包含日誌紀錄) ---
   const importExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -208,16 +257,33 @@ export default function AdminPage({ onSwitchToFront }: { onSwitchToFront: () => 
         const uniqueMap = new Map();
         rawData.forEach(item => uniqueMap.set(item.pn, item));
         const finalData = Array.from(uniqueMap.values());
+        
+        // 1. 執行資料庫匯入
         const { error } = await supabase.from('parts').upsert(finalData, { onConflict: 'pn, project_key, sub_name' });
         if (error) throw error;
         
-        // 修改：匯入成功通知加入筆數
+        // 👉 2. 關鍵新增：將匯入動作寫入系統日誌
+        const importedPns = finalData.map(d => d.pn).join(', ');
+        const detailText = finalData.length > 50 
+          ? `共匯入 ${finalData.length} 筆。\n前 50 筆預覽：${finalData.slice(0, 50).map(d => d.pn).join(', ')} ...等`
+          : `共匯入 ${finalData.length} 筆。\n清單：${importedPns}`;
+        
+        // 呼叫 logUpdate
+        await logUpdate(
+          '批次匯入 Excel', 
+          `[${targetMain} / ${targetSub}] 增加 ${finalData.length} 筆資料`, 
+          detailText
+        );
+
+        // 3. 通知畫面更新
         alert(`✅ 匯入成功！共處理 ${finalData.length} 筆資料。\n歸檔至：${targetMain} / ${targetSub}`);
         
         setDaMain(targetMain);
         setDaSub(targetSub);
         loadPartsForSub();
-      } catch (err: any) { alert('匯入失敗：' + err.message); }
+      } catch (err: any) { 
+        alert('匯入失敗：' + err.message); 
+      }
     };
     reader.readAsBinaryString(file);
     e.target.value = '';
@@ -247,16 +313,50 @@ export default function AdminPage({ onSwitchToFront }: { onSwitchToFront: () => 
     alert(`✅ 匯出成功！已下載資料：共 ${exportData.length} 筆。`);
   };
 
-  const handleSavePart = async (formData: any, isEdit: boolean) => {
+const handleSavePart = async (formData: any, isEdit: boolean) => {
     if (!formData.pn) { alert('料號為必填'); return; }
+    
     try {
       const payload: any = {};
       fields.forEach(f => { if(formData[f.field_key] !== undefined) payload[f.field_key] = formData[f.field_key]; });
-      payload.pn = formData.pn; payload.type_id = formData.type_id; payload.status = formData.status;
-      if (isEdit) { await supabase.from('parts').update(payload).eq('id', formData.id); }
-      else { await supabase.from('parts').insert([{ ...payload, project_key: daMain, sub_name: daSub }]); }
-      setIsAddModalOpen(false); setEditingPart(null); loadPartsForSub();
-    } catch (e: any) { alert('儲存失敗'); }
+      payload.pn = formData.pn; 
+      payload.type_id = formData.type_id; 
+      payload.status = formData.status;
+
+      let dbError;
+
+      // 1. 執行寫入或更新，並把 error 抓出來
+      if (isEdit) { 
+        const { error } = await supabase.from('parts').update(payload).eq('id', formData.id); 
+        dbError = error;
+      } else { 
+        const { error } = await supabase.from('parts').insert([{ ...payload, project_key: daMain, sub_name: daSub }]); 
+        dbError = error;
+      }
+
+      // 2. 檢查 Supabase 是否有報錯
+      if (dbError) {
+        console.error('❌ Supabase 拒絕儲存料號：', dbError);
+        alert(`儲存料號失敗！\n錯誤代碼: ${dbError.code}\n原因: ${dbError.message}`);
+        return; // 發生錯誤就提早結束，不關閉彈窗也不寫日誌
+      }
+
+      // 3. 成功儲存料號後，寫入系統日誌
+      const actionStr = isEdit ? '編輯單筆料號' : '新增單筆料號';
+      const itemStr = `[${daMain} / ${daSub}] ${formData.pn}`; 
+      const detailStr = `機型: ${formData.machine || '未指定'} / 狀態: ${formData.status}`;
+      
+      await logUpdate(actionStr, itemStr, detailStr);
+
+      // 4. 收尾：關閉彈窗並重新讀取資料
+      setIsAddModalOpen(false); 
+      setEditingPart(null); 
+      loadPartsForSub();
+      
+    } catch (e: any) { 
+      // 捕捉前端程式碼本身的當機
+      alert('❌ 發生例外錯誤：' + e.message); 
+    }
   };
 
   // --- Tab 0: 項目管理 ---
@@ -671,13 +771,27 @@ export default function AdminPage({ onSwitchToFront }: { onSwitchToFront: () => 
     </div>
   );
 
-  // --- 子組件：零件編輯彈窗 ---
+// --- 子組件：零件編輯彈窗 ---
   const PartModal = ({ data, onClose, onSave, title }: any) => {
     const [form, setForm] = useState(data || {});
+    
+    // 找出當前主項目的中文名稱
+    const currentProjectName = projects.find(p => p.key === daMain)?.name || daMain;
+
     return (
       <div style={UI_STYLE.overlay}>
         <div style={{ ...UI_STYLE.modal, width: '450px', maxHeight: '90vh', overflowY: 'auto' }}>
-          <h3 style={{ marginTop: 0, marginBottom: '20px', borderBottom: '1px solid #eee', paddingBottom: '10px' }}>{title}</h3>
+          <h3 style={{ marginTop: 0, marginBottom: '15px', borderBottom: '1px solid #eee', paddingBottom: '10px' }}>{title}</h3>
+          
+          {/* --- 新增：顯示資料歸屬的子項目提示區塊 --- */}
+          <div style={{ marginBottom: '20px', padding: '10px 12px', background: '#f0f7ff', border: '1px solid #cce3fd', borderRadius: '8px', fontSize: '13px', color: '#185fa5', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>📁 歸屬位置：</span>
+            <strong>{currentProjectName}</strong>
+            <span style={{ color: '#90bbed' }}>/</span>
+            <strong>{daSub}</strong>
+          </div>
+          {/* --- 新增結束 --- */}
+
           <div style={{ marginBottom: '15px' }}>
             <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '5px', fontSize: '14px' }}>料號 (P/N)</label>
             <input className={styles.input} value={form.pn || ''} onChange={e => setForm({...form, pn: e.target.value})} placeholder="請輸入料號" />
@@ -754,8 +868,33 @@ export default function AdminPage({ onSwitchToFront }: { onSwitchToFront: () => 
         <div className={styles.sbox}>
           <div className={styles.sboxTitle} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span>資料列表 ({filteredParts.length} / {parts.length})</span>
-            {selectedPartIds.length > 0 && (
-              <button onClick={() => { if(confirm(`確認批次刪除選中的 ${selectedPartIds.length} 筆資料？`)) supabase.from('parts').delete().in('id', selectedPartIds).then(() => loadPartsForSub()); }} 
+		{selectedPartIds.length > 0 && (
+              <button onClick={async () => { 
+                if(confirm(`確認批次刪除選中的 ${selectedPartIds.length} 筆資料？`)) {
+                  
+                  // 👉 1. 關鍵新增：在刪除前，先從 parts 狀態中抓出對應的料號 (PN)
+                  const deletedPns = parts
+                    .filter(p => selectedPartIds.includes(p.id))
+                    .map(p => p.pn);
+
+                  // 2. 執行資料庫刪除
+                  await supabase.from('parts').delete().in('id', selectedPartIds);
+                  
+                  // 👉 3. 組合日誌細節文字 (加入超過 50 筆的截斷保護)
+                  const detailStr = deletedPns.length > 50 
+                    ? `刪除的料號 (共 ${deletedPns.length} 筆)：\n${deletedPns.slice(0, 50).join(', ')} ...等`
+                    : `刪除的料號清單：\n${deletedPns.join(', ')}`;
+
+                  // 4. 寫入日誌
+                  await logUpdate(
+                    '批次刪除料號', 
+                    `[${daMain} / ${daSub}] 刪除 ${selectedPartIds.length} 筆資料`, 
+                    detailStr
+                  );
+                  
+                  loadPartsForSub();
+                }
+              }} 
                 style={{ ...UI_STYLE.btnBase, background: 'none', color: '#e03131', border: '1px solid #ffc9c9', padding: '4px 12px' }}>
                 🗑 刪除選中 ({selectedPartIds.length})
               </button>
@@ -813,22 +952,51 @@ export default function AdminPage({ onSwitchToFront }: { onSwitchToFront: () => 
     );
   };
 
+// 如果沒有 session，顯示登入畫面
+if (!session) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#f5f7fa' }}>
+        <form onSubmit={handleLogin} style={{ background: '#fff', padding: '40px', borderRadius: '16px', boxShadow: '0 8px 30px rgba(0,0,0,0.1)', width: '360px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div style={{ textAlign: 'center', fontSize: '24px', marginBottom: '10px' }}>📦 後台登入</div>
+          
+          {/* 👉 這裡把 type="email" 改成 type="text"，並綁定 username */}
+          <input className={styles.input} type="text" placeholder="使用者帳號 (如: admin)" value={username} onChange={(e) => setUsername(e.target.value)} required />
+          <input className={styles.input} type="password" placeholder="密碼" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          
+          <button style={{ ...UI_STYLE.btnBase, ...UI_STYLE.btnPrimary, padding: '12px' }} type="submit" disabled={loading}>
+            {loading ? '登入中...' : '登入系統'}
+          </button>
+          <button type="button" onClick={onSwitchToFront} style={{ border: 'none', background: 'none', color: '#666', cursor: 'pointer', fontSize: '13px' }}>← 返回前台查詢</button>
+        </form>
+      </div>
+    );
+  }
+// 若已登入，顯示原有的後台畫面
   return (
     <div className={styles.adminPage}>
+      {/* 頂部導覽列 */}
       <div className={styles.topbar} style={{ display: 'flex', justifyContent: 'space-between', padding: '15px' }}>
         <div className={styles.topbarLeft} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div className={styles.logo}>📦</div>
           <div className={styles.title} style={{ fontWeight: 800 }}>零件料號系統 - 後台</div>
         </div>
-        <button className={styles.adminBtn} onClick={onSwitchToFront}>⚙ 返回前頁</button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <span style={{ display: 'flex', alignItems: 'center', fontSize: '13px', color: '#666' }}>
+            👤 {session.user.email.split('@')[0]}
+          </span>
+          <button className={styles.adminBtn} onClick={handleLogout} style={{ border: '1px solid #ddd', background: '#fff' }}>登出</button>
+          <button className={styles.adminBtn} onClick={onSwitchToFront}>⚙ 返回前頁</button>
+        </div>
       </div>
       
+      {/* 這裡就是剛剛不小心被縮寫掉的：分頁切換按鈕 (navArea) */}
       <div className={styles.navArea}>
         {['項目', '機型', '欄位', '類型', '資料'].map((l, i) => (
           <button key={i} className={`${styles.adminTab} ${activeTab === i ? styles.active : ''}`} onClick={() => setActiveTab(i)}>{l}</button>
         ))}
       </div>
 
+      {/* 這裡就是剛剛不小心被縮寫掉的：實際渲染的內容區塊 (pageContainer) */}
       <div className={styles.pageContainer}>
         {activeTab === 0 && renderProjectsTab()}
         {activeTab === 1 && renderMachinesTab()}
@@ -838,4 +1006,4 @@ export default function AdminPage({ onSwitchToFront }: { onSwitchToFront: () => 
       </div>
     </div>
   );
-}
+  }
