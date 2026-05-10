@@ -624,3 +624,48 @@
 @media screen and (max-width: 768px) {
   .filterGrid { grid-template-columns: 1fr; gap: 16px; }
 }
+
+/* --- 系統更新浮動視窗 (收合狀態：貼在右側) --- */
+.widgetCollapsed {
+  position: fixed;
+  bottom: 30px;
+  right: 0;
+  background: #185fa5;
+  color: white;
+  padding: 10px 12px 10px 16px;
+  border-radius: 20px 0 0 20px; /* 只有左邊有圓角，右邊平貼螢幕邊緣 */
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: bold;
+  box-shadow: -2px 4px 12px rgba(0,0,0,0.15);
+  z-index: 1000;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.widgetCollapsed:hover {
+  background: #124b82;
+  transform: translateX(-5px); /* 滑鼠碰到時，稍微往左彈出暗示可以點擊 */
+}
+
+/* --- 系統更新浮動視窗 (展開狀態：完整卡片) --- */
+.updateWidget {
+  position: fixed;
+  bottom: 24px;
+  right: 0px;
+  background: white;
+  padding: 14px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  width: fixed;
+  border: 1px solid #cce3fd;
+}
+
+.updateWidget:hover {
+  border-color: #4a90e2; /* Hover卡片時邊框變色 */
+}
+
+.uwText {
+  font-size: 12px;
+  color: #555;
+}
