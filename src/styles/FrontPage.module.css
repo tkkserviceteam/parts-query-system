@@ -585,3 +585,42 @@
     padding: 10px 12px;
   }
 }
+
+/* --- 多條件篩選器樣式 --- */
+.searchWrap {
+  margin-bottom: 16px;
+  background: #f8fbfd;
+  border: 1px solid #cce3fd;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.filterToggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  cursor: pointer;
+  background: #eef5fc;
+  transition: background 0.2s;
+}
+.filterToggle:hover { background: #e2eef9; }
+.filterGrid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr); 
+  gap: 12px;
+  padding: 16px;
+  border-top: 1px solid #cce3fd;
+}
+.filterItem {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.filterItem label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #555;
+}
+@media screen and (max-width: 768px) {
+  .filterGrid { grid-template-columns: 1fr; gap: 16px; }
+}
