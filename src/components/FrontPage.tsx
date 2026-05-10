@@ -29,7 +29,7 @@ export default function FrontPage({ onSwitchToAdmin }: { onSwitchToAdmin: () => 
   // 日誌狀態
   const [logs, setLogs] = useState<any[]>([]); 
   const [showLogModal, setShowLogModal] = useState(false); 
-
+  const [isWidgetOpen, setIsWidgetOpen] = useState(false); // 👉 新增這行：控制右下角視窗是否展開
   // 多條件篩選狀態
   const [filters, setFilters] = useState({ pn: '', name: '', machine: '', status: '' });
 
@@ -337,20 +337,51 @@ export default function FrontPage({ onSwitchToAdmin }: { onSwitchToAdmin: () => 
       </div>
 
       {/* --- 右下角最後更新資訊 --- */}
+{/* --- 右下角最後更新資訊 (內縮/展開版本) --- */}
       {logs.length > 0 && (
-        <div 
-          className={styles.updateWidget} 
-          onClick={() => setShowLogModal(true)}
-          title="點擊查看詳細更新歷史"
-        >
-          <div className={styles.uwDot}></div>
-          <div className={styles.uwContent}>
-            <div className={styles.uwTitle}>系統最後更新 <span>(點擊查看詳情)</span></div>
-            <div className={styles.uwText}>時間：{new Date(logs[0].created_at).toLocaleString('zh-TW')}</div>
-            <div className={styles.uwText}>人員：{logs[0].updater_name}</div>
-            <div className={styles.uwText}>項目：[{logs[0].action}] {logs[0].update_item}</div>
-          </div>
-        </div>
+        <>
+          {/* 收合狀態：貼在畫面右側的懸浮小分頁 */}
+          {!isWidgetOpen && (
+            <div 
+              className={styles.widgetCollapsed} 
+              onClick={() => setIsWidgetOpen(true)}
+              title="點擊查看最新更新"
+            >
+              ◀ 近日更新
+            </div>
+          )}
+
+          {/* 展開狀態：完整的資訊卡片 */}
+          {isWidgetOpen && (
+            <div className={styles.updateWidget}>
+              {/* 頂部標題與收起按鈕 */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', borderBottom: '1px solid #eee', paddingBottom: '8px' }}>
+                <div style={{ fontWeight: 'bold', color: '#185fa5', fontSize: '14px', margin: 0 }}>系統最後更新</div>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); setIsWidgetOpen(false); }}
+                  style={{ background: '#f5f5f5', border: '1px solid #ddd', borderRadius: '4px', cursor: 'pointer', color: '#666', fontSize: '12px', padding: '2px 8px' }}
+                >
+                  收起 ➔
+                </button>
+              </div>
+              
+              {/* 內容區塊 (點擊開啟詳細歷史彈窗) */}
+              <div 
+                onClick={() => setShowLogModal(true)}
+                style={{ cursor: 'pointer', padding: '4px 0' }}
+                title="點擊查看完整歷史紀錄"
+              >
+                <div className={styles.uwText} style={{ marginBottom: '4px' }}>⏰ 時間：{new Date(logs[0].created_at).toLocaleString('zh-TW')}</div>
+                <div className={styles.uwText} style={{ marginBottom: '4px' }}>👤 人員：{logs[0].updater_name}</div>
+                <div className={styles.uwText} style={{ marginBottom: '4px' }}>📝 項目：[{logs[0].action}] {logs[0].update_item}</div>
+                
+                <div style={{ fontSize: '11px', color: '#4a90e2', marginTop: '10px', textAlign: 'right', fontWeight: 'bold' }}>
+                  點擊查看完整歷史 ➔
+                </div>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* --- 更新歷史紀錄彈窗 --- */}
@@ -364,6 +395,8 @@ export default function FrontPage({ onSwitchToAdmin }: { onSwitchToAdmin: () => 
                 <div key={log.id} style={{ marginBottom: '15px', paddingBottom: '15px', borderBottom: '1px dashed #eee' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
                     <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#185fa5' }}>[{log.action}] {log.update_item}</span>
+					 </div>
+					<div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
                     <span style={{ fontSize: '12px', color: '#888' }}>{new Date(log.created_at).toLocaleString('zh-TW')}</span>
                   </div>
                   <div style={{ fontSize: '13px', color: '#666', marginBottom: '6px' }}>👤 操作人員：{log.updater_name}</div>
