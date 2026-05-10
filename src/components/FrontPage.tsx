@@ -292,32 +292,25 @@ export default function FrontPage({ onSwitchToAdmin }: { onSwitchToAdmin: () => 
                 if (prefix) {
                   const specialCode = prefix + selectedPart.pn.replace(/\./g, '');
                   return (
-				<button 
-				  className={styles.specialCodeBtn}
-				  onClick={() => {
-					// 1. 不管手機或電腦，都先默默幫使用者複製好料號
-					navigator.clipboard.writeText(specialCode);
-					
-					const targetUrl = "http://211.75.18.228/tkkweb/inventory/list.asp"; 
-					
-					// 2. 判斷是否為手機 (行動裝置)
-					const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-					
-					if (isMobile) {
-					  // 📱 手機版對策：絕對不要開新分頁！直接在當前分頁覆蓋跳轉，藉此繞過 Safari 的新分頁安全阻擋
-					  window.location.href = targetUrl;
-					} else {
-					  // 💻 電腦版對策：維持原本完美的彈出獨立小視窗
-					  window.open(
-						targetUrl, 
-						'SpecialSystemWindow',
-						'width=800,height=600,left=200,top=100,resizable=yes,scrollbars=yes'
-					  );
-					}
-				  }}
-				>
-				  公司料號：{specialCode} 📋
-				</button>
+<button
+  className={styles.specialCodeBtn}
+  onClick={async () => {
+    const targetUrl =
+      "http://211.75.18.228/tkkweb/inventory/list.asp";
+
+    try {
+      // 只複製料號
+      await navigator.clipboard.writeText(specialCode);
+    } catch (e) {
+      console.log("clipboard failed");
+    }
+
+    // 直接進系統
+    window.location.href = targetUrl;
+  }}
+>
+  公司料號：{specialCode} 📋
+</button>
                   );
                 }
                 return null;
