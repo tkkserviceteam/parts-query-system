@@ -298,7 +298,7 @@ export default function FrontPage({ onSwitchToAdmin }: { onSwitchToAdmin: () => 
 					// 1. 不管手機或電腦，都先默默幫使用者複製好料號
 					navigator.clipboard.writeText(specialCode);
 					
-					const targetUrl = "https://211.75.18.228/tkkweb/inventory/list.asp"; 
+					const targetUrl = "http://211.75.18.228/tkkweb/inventory/list.asp"; 
 					
 					// 2. 判斷是否為手機 (行動裝置)
 					const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
