@@ -292,19 +292,19 @@ export default function FrontPage({ onSwitchToAdmin }: { onSwitchToAdmin: () => 
                 if (prefix) {
                   const specialCode = prefix + selectedPart.pn.replace(/\./g, '');
                   return (
-					<a 
-					  href="http://211.75.18.228/tkkweb/inventory/list.asp"
-					  target="_blank" 
-					  rel="noopener noreferrer"
-					  className={styles.specialCodeBtn}
-					  style={{ textDecoration: 'none', display: 'inline-block', textAlign: 'center' }}
-					  onClick={() => {
-						// 點擊時，依然會在背景默默幫使用者把料號複製到剪貼簿
-						navigator.clipboard.writeText(specialCode);
-					  }}
-					>
-					  公司料號：{specialCode} 📋
-					</a>
+				<a 
+				  href="/api/jump"
+				  target="_blank" 
+				  rel="noopener noreferrer"
+				  className={styles.specialCodeBtn}
+				  style={{ textDecoration: 'none', display: 'inline-block', textAlign: 'center' }}
+				  onClick={() => {
+					// 一樣在背景默默把料號複製給使用者
+					navigator.clipboard.writeText(specialCode);
+				  }}
+				>
+				  公司料號：{specialCode} 📋
+				</a>
                   );
                 }
                 return null;
