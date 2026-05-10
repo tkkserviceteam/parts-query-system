@@ -507,3 +507,81 @@
   color: #333;
   font-weight: 500;
 }
+
+/* 右下角系統更新小工具 */
+.updateWidget {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  padding: 12px 16px;
+  border-radius: 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  z-index: 1000;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.updateWidget:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
+  border-color: #4a90e2;
+}
+
+.uwTitle span {
+  font-size: 10px;
+  color: #4a90e2;
+  font-weight: normal;
+  margin-left: 6px;
+}
+
+.uwDot {
+  width: 8px;
+  height: 8px;
+  background-color: #67c23a; /* 綠色燈號 */
+  border-radius: 50%;
+  margin-top: 5px;
+  box-shadow: 0 0 8px #67c23a;
+  animation: pulse 2s infinite;
+}
+
+.uwContent {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.uwTitle {
+  font-size: 12px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 2px;
+}
+
+.uwText {
+  font-size: 11px;
+  color: #666;
+  font-family: monospace;
+}
+
+/* 綠色燈號呼吸效果 */
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(103, 194, 58, 0.4); }
+  70% { box-shadow: 0 0 0 6px rgba(103, 194, 58, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(103, 194, 58, 0); }
+}
+
+/* 手機版稍微縮小並靠邊 */
+@media screen and (max-width: 768px) {
+  .updateWidget {
+    bottom: 16px;
+    right: 16px;
+    padding: 10px 12px;
+  }
+}
