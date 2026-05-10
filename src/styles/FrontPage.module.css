@@ -623,8 +623,15 @@
 }
 @media screen and (max-width: 768px) {
   .filterGrid { grid-template-columns: 1fr; gap: 16px; }
+  .updateWidget {
+    /* 手機上讓它自動撐滿螢幕，左右各留 16px 的空隙 */
+    width: calc(100vw - 32px); 
+    max-width: none;
+    /* 讓視窗更靠邊緣，節省手機螢幕空間 */
+    right: 16px;
+    bottom: 16px;
+  }
 }
-
 /* --- 系統更新浮動視窗 (收合狀態：貼在右側) --- */
 .widgetCollapsed {
   position: fixed;
@@ -659,6 +666,10 @@
   z-index: 1000;
   width: fixed;
   border: 1px solid #cce3fd;
+/* 電腦版的預設寬度 */
+  width: 320px; 
+  /* 絕對不允許超過螢幕寬度 (扣除左右邊距) */
+  max-width: calc(100vw - 48px); 
 }
 
 .updateWidget:hover {
