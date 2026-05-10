@@ -624,12 +624,10 @@
 @media screen and (max-width: 768px) {
   .filterGrid { grid-template-columns: 1fr; gap: 16px; }
   .updateWidget {
-    /* 手機上讓它自動撐滿螢幕，左右各留 16px 的空隙 */
-    width: fixed; 
-    max-width: none;
-    /* 讓視窗更靠邊緣，節省手機螢幕空間 */
-    right: 16px;
-    bottom: 16px;
+    width: auto;    /* 取消固定寬度 */
+    left: 10px;     /* 距離畫面左邊 10px */
+    right: 10px;    /* 距離畫面右邊 10px */
+    bottom: 20px;   /* 距離畫面底部 20px */
   }
 }
 /* --- 系統更新浮動視窗 (收合狀態：貼在右側) --- */
