@@ -296,7 +296,7 @@ export default function FrontPage({ onSwitchToAdmin }: { onSwitchToAdmin: () => 
                       className={styles.specialCodeBtn}
                       onClick={() => {
                         navigator.clipboard.writeText(specialCode);
-                        const targetUrl = "http://211.75.18.228/tkkweb/inventory/list.asp"; 
+                        const targetUrl = "https://211.75.18.228/tkkweb/inventory/list.asp"; 
                         window.open(
                           targetUrl, 
                           'SpecialSystemWindow',
