@@ -625,7 +625,7 @@
   .filterGrid { grid-template-columns: 1fr; gap: 16px; }
   .updateWidget {
     /* 手機上讓它自動撐滿螢幕，左右各留 16px 的空隙 */
-    width: calc(100vw - 32px); 
+    width: fixed; 
     max-width: none;
     /* 讓視窗更靠邊緣，節省手機螢幕空間 */
     right: 16px;
