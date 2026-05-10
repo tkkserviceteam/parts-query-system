@@ -351,32 +351,34 @@ export default function FrontPage({ onSwitchToAdmin }: { onSwitchToAdmin: () => 
             </div>
           )}
 
-          {/* 展開狀態：完整的資訊卡片 */}
+{/* 展開狀態：完整的資訊卡片 */}
           {isWidgetOpen && (
-            <div className={styles.updateWidget}>
-              {/* 頂部標題與收起按鈕 */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', borderBottom: '1px solid #eee', paddingBottom: '8px' }}>
-                <div style={{ fontWeight: 'bold', color: '#185fa5', fontSize: '14px', margin: 0 }}>系統最後更新</div>
+            <div className={styles.updateWidget} style={{ display: 'flex', flexDirection: 'column' }}>
+              
+              {/* 第一行：標題與返回按鈕 (橫向撐滿) */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', borderBottom: '1px solid #eee', paddingBottom: '8px', width: '100%' }}>
+                <div style={{ fontWeight: 'bold', color: '#185fa5', fontSize: '15px' }}>系統最後更新</div>
                 <button 
                   onClick={(e) => { e.stopPropagation(); setIsWidgetOpen(false); }}
-                  style={{ background: '#f5f5f5', border: '1px solid #ddd', borderRadius: '4px', cursor: 'pointer', color: '#666', fontSize: '12px', padding: '2px 8px' }}
+                  style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#888', fontSize: '13px', padding: '2px 5px' }}
                 >
-                  收起 ➔
+                  [返回]
                 </button>
               </div>
               
-              {/* 內容區塊 (點擊開啟詳細歷史彈窗) */}
+              {/* 第二行開始：詳細資料 (點擊可開啟歷史彈窗) */}
               <div 
                 onClick={() => setShowLogModal(true)}
-                style={{ cursor: 'pointer', padding: '4px 0' }}
+                style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '6px' }}
                 title="點擊查看完整歷史紀錄"
               >
                 <div className={styles.uwText} style={{ marginBottom: '4px' }}>⏰ 時間：{new Date(logs[0].created_at).toLocaleString('zh-TW')}</div>
                 <div className={styles.uwText} style={{ marginBottom: '4px' }}>👤 人員：{logs[0].updater_name}</div>
                 <div className={styles.uwText} style={{ marginBottom: '4px' }}>📝 項目：[{logs[0].action}] {logs[0].update_item}</div>
                 
-                <div style={{ fontSize: '11px', color: '#4a90e2', marginTop: '10px', textAlign: 'right', fontWeight: 'bold' }}>
-                  點擊查看完整歷史 ➔
+                {/* 裝飾性的小提示 */}
+                <div style={{ fontSize: '11px', color: '#4a90e2', textAlign: 'right', marginTop: '4px' }}>
+                   點擊查看完整歷史 ➔
                 </div>
               </div>
             </div>
