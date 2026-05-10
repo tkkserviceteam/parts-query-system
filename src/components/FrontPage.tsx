@@ -293,13 +293,14 @@ export default function FrontPage({ onSwitchToAdmin }: { onSwitchToAdmin: () => 
                   const specialCode = prefix + selectedPart.pn.replace(/\./g, '');
                   return (
 				<a 
-				  href="/api/jump"
+				  // 👉 這裡改成相對路徑，iPhone 就會以為這是在同一個安全網站裡！
+				  href="/tkkweb/inventory/list.asp"
 				  target="_blank" 
 				  rel="noopener noreferrer"
 				  className={styles.specialCodeBtn}
 				  style={{ textDecoration: 'none', display: 'inline-block', textAlign: 'center' }}
 				  onClick={() => {
-					// 一樣在背景默默把料號複製給使用者
+					// 一樣保留複製功能
 					navigator.clipboard.writeText(specialCode);
 				  }}
 				>
