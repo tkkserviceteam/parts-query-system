@@ -13,6 +13,9 @@ const COLORS = [
 ];
 
 export default function FrontPage({ onSwitchToAdmin }: { onSwitchToAdmin: () => void }) {
+  // ==========================================
+  // 1. 所有 State 宣告 (必須集中在最上方)
+  // ==========================================
   const [projects, setProjects] = useState<Project[]>([]);
   const [subProjects, setSubProjects] = useState<SubProject[]>([]);
   const [parts, setParts] = useState<Part[]>([]);
@@ -21,10 +24,40 @@ export default function FrontPage({ onSwitchToAdmin }: { onSwitchToAdmin: () => 
 
   const [curMain, setCurMain] = useState('smt');
   const [curSub, setCurSub] = useState('');
-  const [searchQ, setSearchQ] = useState('');
   const [selectedPn, setSelectedPn] = useState<string | null>(null);
 
-  useEffect(() => { loadData(); }, []);
+  // 日誌狀態
+  const [logs, setLogs] = useState<any[]>([]); 
+  const [showLogModal, setShowLogModal] = useState(false); 
+
+  // 多條件篩選狀態
+  const [filters, setFilters] = useState({ pn: '', name: '', machine: '', status: '' });
+
+  // ==========================================
+  // 2. 資料過濾邏輯 (依賴上方的 filters 狀態)
+  // ==========================================
+  const filteredParts = parts.filter(p => {
+    const matchPn = !filters.pn || (p.pn && p.pn.toLowerCase().includes(filters.pn.toLowerCase()));
+    const matchName = !filters.name || (p.name && p.name.toLowerCase().includes(filters.name.toLowerCase()));
+    const matchMachine = !filters.machine || p.machine === filters.machine;
+    const matchStatus = !filters.status || p.status === filters.status;
+    return matchPn && matchName && matchMachine && matchStatus;
+  });
+
+  // 從目前載入的零件中，動態整理出有哪些機型 (不重複)，供下拉選單使用
+  const availableMachines = Array.from(new Set(parts.map(p => p.machine).filter(Boolean)));
+
+  // ==========================================
+  // 3. 生命週期與資料載入函數
+  // ==========================================
+  useEffect(() => { 
+    loadData(); 
+    loadLogs();
+  }, []);
+
+  useEffect(() => {
+    if (curMain && curSub) { loadParts(); }
+  }, [curMain, curSub]);
 
   const loadData = async () => {
     try {
@@ -49,10 +82,6 @@ export default function FrontPage({ onSwitchToAdmin }: { onSwitchToAdmin: () => 
     } catch (error) { console.error('Error loading data:', error); }
   };
 
-  useEffect(() => {
-    if (curMain && curSub) { loadParts(); }
-  }, [curMain, curSub]);
-
   const loadParts = async () => {
     try {
       const res = await supabase.from('parts').select('*').eq('project_key', curMain).eq('sub_name', curSub);
@@ -60,26 +89,8 @@ export default function FrontPage({ onSwitchToAdmin }: { onSwitchToAdmin: () => 
     } catch (error) { console.error('Error loading parts:', error); }
   };
 
-  const filteredParts = parts.filter(
-    (p) =>
-      !searchQ ||
-      [p.pn, p.name, p.vendor, p.machine, p.model, p.remark].some((v) =>
-        (v || '').toLowerCase().includes(searchQ.toLowerCase())
-      )
-  );
-  
-// ... 其他狀態宣告 ...
-  const [logs, setLogs] = useState<any[]>([]); // 儲存多筆歷史紀錄
-  const [showLogModal, setShowLogModal] = useState(false); // 控制彈窗顯示
-
-  useEffect(() => {
-    loadData();
-    loadLogs(); // 改為載入多筆日誌
-  }, []);
-
   const loadLogs = async () => {
     try {
-      // 一次抓取最近的 20 筆紀錄
       const { data } = await supabase
         .from('system_logs')
         .select('*')
@@ -92,26 +103,23 @@ export default function FrontPage({ onSwitchToAdmin }: { onSwitchToAdmin: () => 
       console.error('無更新紀錄', error);
     }
   };
-// 在 FrontPage 組件內新增處理函數
 
-const handleCodeClick = (formattedCode: string) => {
-  // 1. 複製料號到剪貼簿
-  navigator.clipboard.writeText(formattedCode).then(() => {
-    // 可以選擇性加入一個簡單的提示，例如：alert('已複製特定編碼: ' + formattedCode);
-  });
+  // ==========================================
+  // 4. 其他輔助函數
+  // ==========================================
+  const handleCodeClick = (formattedCode: string) => {
+    navigator.clipboard.writeText(formattedCode).then(() => {
+      // alert('已複製: ' + formattedCode);
+    });
+    window.location.href = "http://your-iis-server-address/error-page-path"; 
+  };
 
-  // 2. 將網頁轉往指定目標 (根據你的描述是轉往該錯誤頁面或特定外部連結)
-  // 注意：若該連結是固定的，直接填寫 URL；若需要帶參數，可自行拼接
-  window.location.href = "http://your-iis-server-address/error-page-path"; 
-};
+  const getSpecialCode = (pn: string, prefix: string | undefined) => {
+    if (!prefix) return null;
+    const cleanPn = pn.replace(/\./g, '');
+    return `${prefix}${cleanPn}`;
+  };
 
-// 轉換規則函數
-const getSpecialCode = (pn: string, prefix: string | undefined) => {
-  if (!prefix) return null;
-  // 規則：prefix + (料號移除所有 ".")
-  const cleanPn = pn.replace(/\./g, '');
-  return `${prefix}${cleanPn}`;
-};
   const curProject = projects.find((p) => p.key === curMain);
   const ci = curProject?.color_index || 0;
   const colorClass = `ci${ci}`;
@@ -132,6 +140,9 @@ const getSpecialCode = (pn: string, prefix: string | undefined) => {
     return <span className={`badge ${badgeClass}`}>{getStatusLabel(status)}</span>;
   };
 
+  // ==========================================
+  // 5. UI 渲染區塊
+  // ==========================================
   return (
     <div className={styles.frontPage}>
       <div className={styles.topbar}>
@@ -154,7 +165,7 @@ const getSpecialCode = (pn: string, prefix: string | undefined) => {
               setCurMain(p.key);
               const firstSub = subProjects.find((s) => s.project_key === p.key)?.name;
               setCurSub(firstSub || '');
-              setSelectedPn(null); // 切換項目時清空選擇
+              setSelectedPn(null);
             }}
           >
             {p.name}
@@ -185,17 +196,60 @@ const getSpecialCode = (pn: string, prefix: string | undefined) => {
         <div className={styles.metric}><div className={styles.label}>查詢結果</div><div className={styles.value}>{filteredParts.length}</div></div>
       </div>
 
+{/* --- 多條件搜尋區塊 (固定顯示) --- */}
       <div className={styles.searchWrap}>
-        <input
-          type="text"
-          placeholder="快速搜尋料號、品名、廠商..."
-          value={searchQ}
-          onChange={(e) => setSearchQ(e.target.value)}
-          className={styles.searchInput}
-        />
+        {/* 標題列 (移除點擊收合功能) */}
+        <div className={styles.filterToggle} style={{ cursor: 'default', background: '#eef5fc' }}>
+          <div style={{ fontWeight: 'bold', color: '#185fa5' }}>
+            🔍 搜尋料號 
+            {Object.values(filters).some(x => x !== '') && <span style={{ color: '#e03131', fontSize: '12px', marginLeft: '8px' }}>(已套用條件)</span>}
+          </div>
+        </div>
+
+        {/* 篩選表單 (移除 showFilters 條件，直接顯示) */}
+        <div className={styles.filterGrid}>
+          <div className={styles.filterItem}>
+            <label>料號 (P/N)</label>
+            <input className={styles.searchInput} placeholder="搜尋料號..." value={filters.pn} onChange={e => setFilters({...filters, pn: e.target.value})} />
+          </div>
+          
+          <div className={styles.filterItem}>
+            <label>品名 / 描述</label>
+            <input className={styles.searchInput} placeholder="搜尋關鍵字..." value={filters.name} onChange={e => setFilters({...filters, name: e.target.value})} />
+          </div>
+          
+          <div className={styles.filterItem}>
+            <label>機型限制</label>
+            <select className={styles.searchInput} value={filters.machine} onChange={e => setFilters({...filters, machine: e.target.value})}>
+              <option value="">-- 全部機型 --</option>
+              {availableMachines.map(m => (
+                <option key={m as string} value={m as string}>{m as string}</option>
+              ))}
+            </select>
+          </div>
+          
+          <div className={styles.filterItem}>
+            <label>狀態限制</label>
+            <select className={styles.searchInput} value={filters.status} onChange={e => setFilters({...filters, status: e.target.value})}>
+              <option value="">-- 全部狀態 --</option>
+              <option value="active">有效 (Active)</option>
+              <option value="obs">停產預告 (Obs)</option>
+              <option value="eol">已停產 (EOL)</option>
+            </select>
+          </div>
+
+          <div className={styles.filterItem} style={{ display: 'flex', alignItems: 'flex-end' }}>
+            <button 
+              style={{ width: '100%', padding: '9px', background: '#fff5f5', color: '#e03131', border: '1px solid #ffc9c9', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}
+              onClick={() => setFilters({pn: '', name: '', machine: '', status: ''})}
+            >
+              🧹 清除條件
+            </button>
+          </div>
+        </div>
       </div>
 
-{/* --- 極簡化表格：僅呈現核心三項 --- */}
+      {/* --- 極簡化表格 --- */}
       <div className={styles.tableWrap}>
         <table>
           <thead>
@@ -224,75 +278,65 @@ const getSpecialCode = (pn: string, prefix: string | undefined) => {
         </table>
       </div>
 
-      {/* 詳情面板：點擊料號後呈現 */}
-{/* Detail Panel */}
-<div className={styles.detail}>
-  <div className={styles.detailHead}>
-    <span>詳細資料</span>
-    
-    {/* --- 以下為新增：右側顯示特定編碼與點擊功能 --- */}
-    <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-      
-      {selectedPart && (
-        (() => {
-          // 1. 找到當前的子項目物件，取得其設定的 prefix
-          const subProj = subProjects.find(s => s.project_key === curMain && s.name === curSub);
-          const prefix = (subProj as any)?.code_prefix; // 假設你在資料庫新增的欄位叫 code_prefix
+      {/* 詳情面板 */}
+      <div className={styles.detail}>
+        <div className={styles.detailHead}>
+          <span>詳細資料</span>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+            {selectedPart && (
+              (() => {
+                const subProj = subProjects.find(s => s.project_key === curMain && s.name === curSub);
+                const prefix = (subProj as any)?.code_prefix;
 
-          if (prefix) {
-            // 2. 規則轉換：Prefix + 料號(去掉所有的點)
-            const specialCode = prefix + selectedPart.pn.replace(/\./g, '');
-            
-            return (
-              <button 
-			  className={styles.specialCodeBtn}
-			  onClick={() => {
-				// 1. 複製到剪貼簿
-				navigator.clipboard.writeText(specialCode);
-				
-				// 2. 開啟獨立漂浮小視窗 (寬800, 高600)
-				const targetUrl = "http://211.75.18.228/tkkweb/inventory/list.asp"; 
-				window.open(
-				  targetUrl, 
-				  'SpecialSystemWindow', // 視窗名稱
-				  'width=800,height=600,left=200,top=100,resizable=yes,scrollbars=yes' // 視窗屬性
-				);
-			  }}
-			>
-			  公司料號：{specialCode} 📋
-</button>
-            );
-          }
-          return null;
-        })()
-      )}
-    </div>
-    {/* --- 新增結束 --- */}
-  </div>
-
-  <div className={styles.detailBody}>
-    {selectedPart ? (
-      /* --- 這裡修改了樣式類別，讓間距變窄 --- */
-      <div className={styles.dgrid}> 
-        {fields.map((f) => (
-          <div key={f.id} className={styles.ditem}>
-            <div className={styles.fl}>{f.label}</div>
-            <div className={styles.fv}>
-              {f.field_key === 'type_id'
-                ? getTypeName(selectedPart.type_id)
-                : f.field_key === 'status'
-                  ? getStatusBadge(selectedPart.status).props.children // 只拿文字
-                  : (selectedPart as any)[f.field_key] || '—'}
-            </div>
+                if (prefix) {
+                  const specialCode = prefix + selectedPart.pn.replace(/\./g, '');
+                  return (
+                    <button 
+                      className={styles.specialCodeBtn}
+                      onClick={() => {
+                        navigator.clipboard.writeText(specialCode);
+                        const targetUrl = "http://211.75.18.228/tkkweb/inventory/list.asp"; 
+                        window.open(
+                          targetUrl, 
+                          'SpecialSystemWindow',
+                          'width=800,height=600,left=200,top=100,resizable=yes,scrollbars=yes'
+                        );
+                      }}
+                    >
+                      公司料號：{specialCode} 📋
+                    </button>
+                  );
+                }
+                return null;
+              })()
+            )}
           </div>
-        ))}
+        </div>
+
+        <div className={styles.detailBody}>
+          {selectedPart ? (
+            <div className={styles.dgrid}> 
+              {fields.map((f) => (
+                <div key={f.id} className={styles.ditem}>
+                  <div className={styles.fl}>{f.label}</div>
+                  <div className={styles.fv}>
+                    {f.field_key === 'type_id'
+                      ? getTypeName(selectedPart.type_id)
+                      : f.field_key === 'status'
+                        ? getStatusBadge(selectedPart.status).props.children
+                        : (selectedPart as any)[f.field_key] || '—'}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className={styles.placeholder}>點選料號查看詳細資料</div>
+          )}
+        </div>
       </div>
-    ) : (
-      <div className={styles.placeholder}>點選料號查看詳細資料</div>
-    )}
-  </div>
-</div>
-{/* --- 右下角最後更新資訊 (改為可點擊) --- */}
+
+      {/* --- 右下角最後更新資訊 --- */}
       {logs.length > 0 && (
         <div 
           className={styles.updateWidget} 
@@ -315,7 +359,6 @@ const getSpecialCode = (pn: string, prefix: string | undefined) => {
           <div style={{ background: '#fff', padding: '25px', borderRadius: '16px', width: '550px', maxHeight: '80vh', overflowY: 'hidden', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
             <h3 style={{ margin: '0 0 15px 0', borderBottom: '2px solid #eee', paddingBottom: '10px' }}>📜 系統更新歷史紀錄</h3>
             
-            {/* 歷史清單列表 */}
             <div style={{ overflowY: 'auto', flexGrow: 1, paddingRight: '10px' }}>
               {logs.map((log) => (
                 <div key={log.id} style={{ marginBottom: '15px', paddingBottom: '15px', borderBottom: '1px dashed #eee' }}>
@@ -325,7 +368,6 @@ const getSpecialCode = (pn: string, prefix: string | undefined) => {
                   </div>
                   <div style={{ fontSize: '13px', color: '#666', marginBottom: '6px' }}>👤 操作人員：{log.updater_name}</div>
                   
-                  {/* 若有 details (例如匯入了哪些料號)，顯示在這裡 */}
                   {log.details && (
                     <div style={{ background: '#f8f9fa', padding: '10px', borderRadius: '6px', fontSize: '12px', color: '#555', whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
                       {log.details}
@@ -343,6 +385,6 @@ const getSpecialCode = (pn: string, prefix: string | undefined) => {
           </div>
         </div>
       )}
-    </div> // 這是原本最外層的 </div>
+    </div>
   );
 }
