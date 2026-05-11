@@ -864,7 +864,7 @@ const handleSavePart = async (formData: any, isEdit: boolean) => {
             </select>
           </div>
           <div className={styles.xlToolbar} style={{ marginTop: '15px' }}>
-            <label className={styles.xlBtn} style={{ background: '#4CAF50' }}>⬆ 智能匯入 Excel<input type="file" hidden onChange={importExcel} /></label>
+            <label className={styles.xlBtn} style={{ background: '#4CAF50' }}>⬆ 批量匯入 Excel<input type="file" hidden onChange={importExcel} /></label>
             <button className={styles.xlBtn} style={{ background: '#666', color: 'white' }} onClick={exportExcel}>⬇ 匯出資料 ({parts.length} 筆)</button>
             <button className={styles.xlBtn} style={{ backgroundColor: '#2a69ac', color: 'white' }} onClick={() => setIsAddModalOpen(true)}>＋ 單筆新增</button>
           </div>
