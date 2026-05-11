@@ -102,12 +102,17 @@ export default function AdminPage({ onSwitchToFront }: { onSwitchToFront: () => 
 
   useEffect(() => { loadAllData(); }, []);
 
-  useEffect(() => {
-    if (daMain) {
-      const first = subProjects.find((s) => s.project_key === daMain)?.name;
-      setDaSub(first || '');
-    }
-  }, [daMain, subProjects]);
+	// 只有當「主項目」手動切換時，才去重設子項目為第一個
+	useEffect(() => {
+	  if (daMain) {
+		const first = subProjects.find((s) => s.project_key === daMain)?.name;
+		// 檢查目前選的 daSub 是否還在新的子項目清單內，不在才重設
+		const stillExists = subProjects.some(s => s.project_key === daMain && s.name === daSub);
+		if (!stillExists) {
+			setDaSub(first || '');
+		}
+	  }
+	}, [daMain]); // 移除 subProjects 依賴，避免 loadAllData 觸發重設
 
   useEffect(() => {
     if (daMain && daSub) { loadPartsForSub(); }
