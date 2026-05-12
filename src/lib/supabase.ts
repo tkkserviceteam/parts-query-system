@@ -28,6 +28,7 @@ export interface Machine {
   project_key: string;
   sub_name: string;
   name: string;
+  code_prefix?: string | null;
 }
 
 export interface FieldDef {
