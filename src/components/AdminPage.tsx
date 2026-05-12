@@ -102,17 +102,12 @@ export default function AdminPage({ onSwitchToFront }: { onSwitchToFront: () => 
 
   useEffect(() => { loadAllData(); }, []);
 
-	// 只有當「主項目」手動切換時，才去重設子項目為第一個
-	useEffect(() => {
-	  if (daMain) {
-		const first = subProjects.find((s) => s.project_key === daMain)?.name;
-		// 檢查目前選的 daSub 是否還在新的子項目清單內，不在才重設
-		const stillExists = subProjects.some(s => s.project_key === daMain && s.name === daSub);
-		if (!stillExists) {
-			setDaSub(first || '');
-		}
-	  }
-	}, [daMain]); // 移除 subProjects 依賴，避免 loadAllData 觸發重設
+  useEffect(() => {
+    if (daMain) {
+      const first = subProjects.find((s) => s.project_key === daMain)?.name;
+      setDaSub(first || '');
+    }
+  }, [daMain, subProjects]);
 
   useEffect(() => {
     if (daMain && daSub) { loadPartsForSub(); }
@@ -256,9 +251,24 @@ export default function AdminPage({ onSwitchToFront }: { onSwitchToFront: () => 
                 } else { cleaned[dbKey] = row[k]?.toString().trim(); }
             }
           });
-          if (cleaned.status === '有效' || cleaned.status === 'active') cleaned.status = 'active';
-          return cleaned;
-        }).filter(r => r.pn);
+          if (cleaned.status === '有效' || cleaned.status === 'active') {
+		  cleaned.status = 'active';
+		} else {
+		  cleaned.status = 'disabled'; // 其他一律視為停用
+		}
+
+		// 2. 編輯彈窗中的下拉選單 (PartModal)
+		const rawStatus = (row['狀態'] || row['status'] || '').toString().trim().toLowerCase();
+		  
+		  if (['有效', 'active', 'ok', 'y'].includes(rawStatus)) {
+			cleaned.status = 'active';
+		  } else {
+			// 只要不是上述「有效」字眼，一律視為停用 (包含原本的 obs, eol, 停產)
+			cleaned.status = 'disabled';
+		  }
+		  
+		  return cleaned;
+		}).filter(r => r.pn);
         const uniqueMap = new Map();
         rawData.forEach(item => uniqueMap.set(item.pn, item));
         const finalData = Array.from(uniqueMap.values());
@@ -302,7 +312,7 @@ export default function AdminPage({ onSwitchToFront }: { onSwitchToFront: () => 
         const row: any = {};
         fields.forEach(f => {
             let val = (p as any)[f.field_key];
-            if (f.field_key === 'status') val = val === 'active' ? '有效' : '停產';
+            if (f.field_key === 'status') val = val === 'active' ? '有效' : '停用';
             if (f.field_key === 'type_id') val = partTypes.find(t => t.id === p.type_id)?.name || '';
             row[f.label] = val || '';
         });
@@ -317,53 +327,88 @@ export default function AdminPage({ onSwitchToFront }: { onSwitchToFront: () => 
     // 修改：匯出成功通知顯示實際筆數
     alert(`✅ 匯出成功！已下載資料：共 ${exportData.length} 筆。`);
   };
+	const getTypeName = (typeId?: number) => {
+	  if (!typeId) return '—';
+	  // 這裡會對應到你在 AdminPage 宣告的 const [partTypes, setPartTypes] = useState(...)
+	  return partTypes.find((t) => t.id === typeId)?.name || '—';
+	};
+	const handleSavePart = async (formData: any, isEdit: boolean) => {
+	  if (!formData.pn) { alert('料號為必填'); return; }
+	  
+	  try {
+		// 1. 準備要儲存的資料 (Payload)
+		const payload: any = {};
+		fields.forEach(f => { 
+		  if(formData[f.field_key] !== undefined) payload[f.field_key] = formData[f.field_key]; 
+		});
+		payload.pn = formData.pn; 
+		payload.type_id = formData.type_id; 
+		payload.status = formData.status;
 
-const handleSavePart = async (formData: any, isEdit: boolean) => {
-    if (!formData.pn) { alert('料號為必填'); return; }
-    
-    try {
-      const payload: any = {};
-      fields.forEach(f => { if(formData[f.field_key] !== undefined) payload[f.field_key] = formData[f.field_key]; });
-      payload.pn = formData.pn; 
-      payload.type_id = formData.type_id; 
-      payload.status = formData.status;
+		let dbError;
+		let logDetails = "";
 
-      let dbError;
+		// 2. 如果是「編輯」模式，進行新舊值比對
+		if (isEdit && editingPart) {
+		  const diffs: string[] = [];
 
-      // 1. 執行寫入或更新，並把 error 抓出來
-      if (isEdit) { 
-        const { error } = await supabase.from('parts').update(payload).eq('id', formData.id); 
-        dbError = error;
-      } else { 
-        const { error } = await supabase.from('parts').insert([{ ...payload, project_key: daMain, sub_name: daSub }]); 
-        dbError = error;
-      }
+		  // 比對所有自定義欄位 (fields)
+		  fields.forEach(f => {
+			const oldVal = (editingPart[f.field_key] || '—').toString().trim();
+			const newVal = (payload[f.field_key] || '—').toString().trim();
+			if (oldVal !== newVal) {
+			  diffs.push(`${f.label}:「${oldVal}」➔「${newVal}」`);
+			}
+		  });
 
-      // 2. 檢查 Supabase 是否有報錯
-      if (dbError) {
-        console.error('❌ Supabase 拒絕儲存料號：', dbError);
-        alert(`儲存料號失敗！\n錯誤代碼: ${dbError.code}\n原因: ${dbError.message}`);
-        return; // 發生錯誤就提早結束，不關閉彈窗也不寫日誌
-      }
+		  // 比對零件類型 (type_id) - 轉為名稱顯示更直觀
+		  if (editingPart.type_id !== payload.type_id) {
+			const oldType = getTypeName(editingPart.type_id);
+			const newType = getTypeName(payload.type_id);
+			diffs.push(`類型:「${oldType}」➔「${newType}」`);
+		  }
 
-      // 3. 成功儲存料號後，寫入系統日誌
-      const actionStr = isEdit ? '編輯單筆料號' : '新增單筆料號';
-      const itemStr = `[${daMain} / ${daSub}] ${formData.pn}`; 
-      const detailStr = `機型: ${formData.machine || '未指定'} / 狀態: ${formData.status}`;
-      
-      await logUpdate(actionStr, itemStr, detailStr);
+		  // 比對狀態 (status)
+		  if (editingPart.status !== payload.status) {
+			const oldStatus = editingPart.status === 'active' ? '有效' : '停用';
+			const newStatus = payload.status === 'active' ? '有效' : '停用';
+			diffs.push(`狀態:「${oldStatus}」➔「${newStatus}」`);
+		  }
 
-      // 4. 收尾：關閉彈窗並重新讀取資料
-      setIsAddModalOpen(false); 
-      setEditingPart(null); 
-      loadPartsForSub();
-      
-    } catch (e: any) { 
-      // 捕捉前端程式碼本身的當機
-      alert('❌ 發生例外錯誤：' + e.message); 
-    }
-  };
+		  logDetails = diffs.length > 0 ? diffs.join('\n') : "未偵測到實質內容變動";
 
+		  // 執行更新
+		  const { error } = await supabase.from('parts').update(payload).eq('id', formData.id); 
+		  dbError = error;
+		} else {
+		  // 如果是「新增」模式
+		  const { error } = await supabase.from('parts').insert([{ ...payload, project_key: daMain, sub_name: daSub }]); 
+		  dbError = error;
+		  logDetails = `初始資料：機型=${payload.machine || '未指定'} / 狀態=${payload.status === 'active' ? '有效' : '停用'}`;
+		}
+
+		// 3. 檢查資料庫錯誤
+		if (dbError) {
+		  console.error('❌ Supabase 錯誤：', dbError);
+		  alert(`儲存失敗！\n代碼: ${dbError.code}\n原因: ${dbError.message}`);
+		  return;
+		}
+
+		// 4. 寫入詳盡系統日誌
+		const actionStr = isEdit ? '編輯單筆' : '新增單筆';
+		const itemStr = `[${daMain} / ${daSub}] ${formData.pn}`; 
+		
+		await logUpdate(actionStr, itemStr, logDetails);
+
+		// 5. 收尾
+		setIsAddModalOpen(false); 
+		setEditingPart(null); 
+		loadPartsForSub();
+		
+	  } catch (e: any) { 
+		alert('❌ 系統例外錯誤：' + e.message); 
+	  }
+	};
   // --- Tab 0: 項目管理 ---
   const [expandedKeys, setExpandedKeys] = useState<string[]>([]);
   const [projectModal, setProjectModal] = useState<{ open: boolean; type: 'project' | 'sub'; mode: 'add' | 'edit'; data?: any; projectKey?: string }>({ 
@@ -816,13 +861,17 @@ const handleSavePart = async (formData: any, isEdit: boolean) => {
                     <option value="">-- 選擇零件類型 --</option>
                     {partTypes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                   </select>
-                ) : f.field_key === 'status' ? (
-                  <select className={styles.select} value={form[f.field_key] || 'active'} onChange={e => setForm({...form, [f.field_key]: e.target.value})}>
-                    <option value="active">有效 (Active)</option>
-                    <option value="obs">停產預告 (Obs)</option>
-                    <option value="eol">已停產 (EOL)</option>
-                  </select>
-                ) : (
+                ) :f.field_key === 'status' ? (
+				  <select 
+					className={styles.select} 
+					value={form[f.field_key] || 'active'} 
+					onChange={e => setForm({...form, [f.field_key]: e.target.value})}
+				  >
+					<option value="active">有效 (Active)</option>
+					{/* 這裡統一改為 disabled */}
+					<option value="disabled">停用 (Disabled)</option>
+				  </select>
+				) : (
                   <input className={styles.input} value={form[f.field_key] || ''} onChange={e => setForm({...form, [f.field_key]: e.target.value})} />
                 )}
               </div>
@@ -864,7 +913,7 @@ const handleSavePart = async (formData: any, isEdit: boolean) => {
             </select>
           </div>
           <div className={styles.xlToolbar} style={{ marginTop: '15px' }}>
-            <label className={styles.xlBtn} style={{ background: '#4CAF50' }}>⬆ 批量匯入 Excel<input type="file" hidden onChange={importExcel} /></label>
+            <label className={styles.xlBtn} style={{ background: '#4CAF50' }}>⬆ 智能匯入 Excel<input type="file" hidden onChange={importExcel} /></label>
             <button className={styles.xlBtn} style={{ background: '#666', color: 'white' }} onClick={exportExcel}>⬇ 匯出資料 ({parts.length} 筆)</button>
             <button className={styles.xlBtn} style={{ backgroundColor: '#2a69ac', color: 'white' }} onClick={() => setIsAddModalOpen(true)}>＋ 單筆新增</button>
           </div>
@@ -929,18 +978,25 @@ const handleSavePart = async (formData: any, isEdit: boolean) => {
               <thead>
                 <tr>
                   {/* 注意：全選框也應對應過濾後的資料 */}
-                  <th><input type="checkbox" onChange={e => setSelectedPartIds(e.target.checked ? filteredParts.map(p => p.id) : [])} checked={filteredParts.length > 0 && selectedPartIds.length === filteredParts.length} /></th>
-                  <th>料號</th><th>品名</th><th>機型</th><th>狀態</th><th>編輯</th>
+                  <th style={{ textAlign: 'center' }}><input type="checkbox" onChange={e => setSelectedPartIds(e.target.checked ? filteredParts.map(p => p.id) : [])} checked={filteredParts.length > 0 && selectedPartIds.length === filteredParts.length} /></th>
+                  <th style={{ textAlign: 'center' }}>料號</th>
+				  <th style={{ textAlign: 'center' }}>品名</th>
+				  <th style={{ textAlign: 'center' }}>機型</th>
+				  <th style={{ textAlign: 'center' }}>狀態</th>
+				  <th style={{ textAlign: 'center' }}>編輯</th>
+				  <th style={{ textAlign: 'center' }}>公司料號</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredParts.map(p => (
                   <tr key={p.id}>
-                    <td><input type="checkbox" checked={selectedPartIds.includes(p.id)} onChange={() => setSelectedPartIds(prev => prev.includes(p.id) ? prev.filter(i => i !== p.id) : [...prev, p.id])} /></td>
-                    <td style={{ fontWeight: 'bold' }}>{p.pn}</td>
-                    <td>{p.name}</td><td>{p.machine}</td>
-                    <td><span className={p.status === 'active' ? styles.badgeOk : styles.badgeObs}>{p.status === 'active' ? '有效' : '停產'}</span></td>
-                    <td><button onClick={() => setEditingPart(p)} style={{ border: 'none', background: 'none', cursor: 'pointer' }}>✎</button></td>
+                    <td style={{ textAlign: 'center' }}><input type="checkbox" checked={selectedPartIds.includes(p.id)} onChange={() => setSelectedPartIds(prev => prev.includes(p.id) ? prev.filter(i => i !== p.id) : [...prev, p.id])} /></td>
+                    <td style={{ fontWeight: 'bold' }} style={{ textAlign: 'center' }}>{p.pn}</td>
+                    <td style={{ textAlign: 'center' }}>{p.name}</td>
+					<td style={{ textAlign: 'center' }}>{p.machine}</td>
+                    <td style={{ textAlign: 'center' }}><span className={p.status === 'active' ? styles.badgeOk : styles.badgeObs}>{p.status === 'active' ? '有效' : '停用'}</span></td>
+                    <td style={{ textAlign: 'center' }}><button onClick={() => setEditingPart(p)} style={{ border: 'none', background: 'none', cursor: 'pointer' }}>✎</button></td>
+					<td style={{ textAlign: 'center' }}>{(() => {const subObj = subProjects.find(s => s.project_key === daMain && s.name === daSub); return subObj?.code_prefix ? `${subObj.code_prefix}${p.pn.replace(/\./g, '')}` : '—';})()}</td>
                   </tr>
                 ))}
               </tbody>

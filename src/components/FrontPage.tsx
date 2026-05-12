@@ -16,6 +16,7 @@ export default function FrontPage({ onSwitchToAdmin }: { onSwitchToAdmin: () => 
   // ==========================================
   // 1. 所有 State 宣告 (必須集中在最上方)
   // ==========================================
+  const [machines, setMachines] = useState<any[]>([]); // 儲存所有從資料庫讀取的機型
   const [projects, setProjects] = useState<Project[]>([]);
   const [subProjects, setSubProjects] = useState<SubProject[]>([]);
   const [parts, setParts] = useState<Part[]>([]);
@@ -37,16 +38,29 @@ export default function FrontPage({ onSwitchToAdmin }: { onSwitchToAdmin: () => 
   // ==========================================
   // 2. 資料過濾邏輯 (依賴上方的 filters 狀態)
   // ==========================================
-  const filteredParts = parts.filter(p => {
-    const matchPn = !filters.pn || (p.pn && p.pn.toLowerCase().includes(filters.pn.toLowerCase()));
-    const matchName = !filters.name || (p.name && p.name.toLowerCase().includes(filters.name.toLowerCase()));
-    const matchMachine = !filters.machine || p.machine === filters.machine;
-    const matchStatus = !filters.status || p.status === filters.status;
-    return matchPn && matchName && matchMachine && matchStatus;
-  });
+	const filteredParts = parts.filter(p => {
+	  const matchPn = !filters.pn || (p.pn && p.pn.toLowerCase().includes(filters.pn.toLowerCase()));
+	  const matchName = !filters.name || (p.name && p.name.toLowerCase().includes(filters.name.toLowerCase()));
+	  const matchMachine = !filters.machine || p.machine === filters.machine;
+	  
+	  // 修改狀態比對邏輯
+	  let matchStatus = true;
+	  if (filters.status) {
+		if (filters.status === 'active') {
+		  matchStatus = p.status === 'active';
+		} else if (filters.status === 'disabled') {
+		  // 只要不是 active，就視為停用（相容舊有的 obs, eol 或新的 disabled）
+		  matchStatus = p.status !== 'active';
+		}
+	  }
+	  
+	  return matchPn && matchName && matchMachine && matchStatus;
+	});
 
   // 從目前載入的零件中，動態整理出有哪些機型 (不重複)，供下拉選單使用
-  const availableMachines = Array.from(new Set(parts.map(p => p.machine).filter(Boolean)));
+	const availableMachines = machines
+	  .filter(m => m.project_key === curMain && m.sub_name === curSub)
+	  .map(m => m.name);
 
   // ==========================================
   // 3. 生命週期與資料載入函數
@@ -77,17 +91,19 @@ useEffect(() => {
 
   const loadData = async () => {
     try {
-      const [projectsRes, subRes, fieldsRes, typesRes] = await Promise.all([
+      const [projectsRes, subRes, fieldsRes, typesRes, machinesRes] = await Promise.all([
         supabase.from('projects').select('*').order('sort_order'),
         supabase.from('sub_projects').select('*').order('sort_order'),
         supabase.from('field_defs').select('*').order('sort_order'),
         supabase.from('part_types').select('*'),
+		supabase.from('machines').select('*').order('sort_order'),
       ]);
 
       if (projectsRes.data) setProjects(projectsRes.data);
       if (subRes.data) setSubProjects(subRes.data);
       if (fieldsRes.data) setFields(fieldsRes.data);
       if (typesRes.data) setPartTypes(typesRes.data);
+	  if (machinesRes.data) setMachines(machinesRes.data);
 
       if (projectsRes.data && projectsRes.data.length > 0) {
         const firstMain = projectsRes.data[0].key;
@@ -146,16 +162,20 @@ useEffect(() => {
     return partTypes.find((t) => t.id === typeId)?.name || '—';
   };
 
-  const getStatusLabel = (status: string) => {
-    const mapping: any = { 'active': '有效', 'obs': '停產預告', 'eol': '已停產' };
-    return mapping[status] || status;
-  };
+	// 修改狀態標籤邏輯
+	const getStatusLabel = (status: string) => {
+	  return status === 'active' ? '有效' : '停用';
+	};
 
-  const getStatusBadge = (status: string) => {
-    const badgeClass = status === 'active' ? 'badge-ok' : status === 'obs' ? 'badge-obs' : 'badge-eol';
-    return <span className={`badge ${badgeClass}`}>{getStatusLabel(status)}</span>;
-  };
-
+	const getStatusBadge = (status: string) => {
+	  const isOk = status === 'active';
+	  return (
+		<span className={`badge ${isOk ? 'badge-ok' : 'badge-eol'}`}>
+		  {isOk ? '有效' : '停用'}
+		</span>
+	  );
+	};
+	
   // ==========================================
   // 5. UI 渲染區塊
   // ==========================================
@@ -244,26 +264,27 @@ useEffect(() => {
             </select>
           </div>
           
-          <div className={styles.filterItem}>
-            <label>狀態限制</label>
-            <select className={styles.searchInput} value={filters.status} onChange={e => setFilters({...filters, status: e.target.value})}>
-              <option value="">-- 全部狀態 --</option>
-              <option value="active">有效 (Active)</option>
-              <option value="obs">停產預告 (Obs)</option>
-              <option value="eol">已停產 (EOL)</option>
-            </select>
-          </div>
-       </div>
-	             <div className={styles.filterItem} style={{ display: 'flex', alignItems: 'flex-end' }}>
-            <button 
-              style={{ width: '100%', padding: '9px', background: '#fff5f5', color: '#e03131', border: '1px solid #ffc9c9', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}
-              onClick={() => setFilters({pn: '', name: '', machine: '', status: ''})}
-            >
+			  <div className={styles.filterItem}>
+			  <label>狀態限制</label>
+			  <select 
+				className={styles.searchInput} 
+				value={filters.status} 
+				onChange={e => setFilters({...filters, status: e.target.value})}
+			  >
+				<option value="">-- 全部狀態 --</option>
+				<option value="active">有效 (Active)</option>
+				{/* 將原本的 obs 與 eol 改為單一的 disabled */}
+				<option value="disabled">停用 (Disabled)</option>
+			  </select>
+			</div>
+	             
+      </div>
+	  <div className={styles.filterItem} style={{ display: 'flex', alignItems: 'flex-end' }}>
+            <button style={{ width: '100%', padding: '9px', background: '#fff5f5', color: '#e03131', border: '1px solid #ffc9c9', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }} onClick={() => setFilters({pn: '', name: '', machine: '', status: ''})}>
               🧹 清除條件
             </button>
           </div>
-      </div>
-
+          </div>
       {/* --- 極簡化表格 --- */}
       <div className={styles.tableWrap}>
         <table>
@@ -299,45 +320,42 @@ useEffect(() => {
           <span>詳細資料</span>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-            {selectedPart && (
-              (() => {
-                const subProj = subProjects.find(s => s.project_key === curMain && s.name === curSub);
-                const prefix = (subProj as any)?.code_prefix;
+			{selectedPart && (
+			  (() => {
+				// 1. 精準找出當前選中的子項目物件
+				const currentSubObj = subProjects.find(
+				  s => s.project_key === curMain && s.name === curSub
+				);
+				
+				// 2. 抓取該子項目的 prefix (例如 "1GKG")
+				const prefix = currentSubObj?.code_prefix;
 
-                if (prefix) {
-                  const specialCode = prefix + selectedPart.pn.replace(/\./g, '');
-                  return (
-				<button 
-				  className={styles.specialCodeBtn}
-				  onClick={() => {
-					// 1. 不管手機或電腦，都先默默幫使用者複製好料號
-					navigator.clipboard.writeText(specialCode);
-					
-					const targetUrl = "http://211.75.18.228/tkkweb/inventory/list.asp"; 
-					
-					// 2. 判斷是否為手機 (行動裝置)
-					const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-					
-					if (isMobile) {
-					  // 📱 手機版對策：絕對不要開新分頁！直接在當前分頁覆蓋跳轉，藉此繞過 Safari 的新分頁安全阻擋
-					  window.location.href = targetUrl;
-					} else {
-					  // 💻 電腦版對策：維持原本完美的彈出獨立小視窗
-					  window.open(
-						targetUrl, 
-						'SpecialSystemWindow',
-						'width=800,height=600,left=200,top=100,resizable=yes,scrollbars=yes'
-					  );
-					}
-				  }}
-				>
-				  公司料號：{specialCode} 📋
-				</button>
-                  );
-                }
-                return null;
-              })()
-            )}
+				if (prefix) {
+				  // 3. 規則：Prefix + 去掉小數點後的料號
+				  const specialCode = prefix + selectedPart.pn.replace(/\./g, '');
+				  
+				  return (
+					<button 
+					  className={styles.specialCodeBtn}
+					  onClick={() => {
+						navigator.clipboard.writeText(specialCode);
+						const targetUrl = "http://211.75.18.228/tkkweb/inventory/list.asp"; 
+						
+						const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+						if (isMobile) {
+						  window.location.href = targetUrl;
+						} else {
+						  window.open(targetUrl, 'SpecialSystemWindow', 'width=800,height=600');
+						}
+					  }}
+					>
+					  公司料號：{specialCode} 📋
+					</button>
+				  );
+				}
+				return null;
+			  })()
+			)}
           </div>
         </div>
 
