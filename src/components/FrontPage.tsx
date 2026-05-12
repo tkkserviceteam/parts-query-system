@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase, Project, SubProject, Part, FieldDef, PartType } from '@/lib/supabase';
 import styles from '@/styles/FrontPage.module.css';
 
@@ -30,6 +30,7 @@ export default function FrontPage({ onSwitchToAdmin }: { onSwitchToAdmin: () => 
   const [logs, setLogs] = useState<any[]>([]); 
   const [showLogModal, setShowLogModal] = useState(false); 
   const [isWidgetOpen, setIsWidgetOpen] = useState(false); // 👉 新增這行：控制右下角視窗是否展開
+  const widgetRef = useRef<HTMLDivElement>(null); // 👈 補上這一行
   // 多條件篩選狀態
   const [filters, setFilters] = useState({ pn: '', name: '', machine: '', status: '' });
 
@@ -58,6 +59,21 @@ export default function FrontPage({ onSwitchToAdmin }: { onSwitchToAdmin: () => 
   useEffect(() => {
     if (curMain && curSub) { loadParts(); }
   }, [curMain, curSub]);
+
+// 處理點擊頁面其他地方自動收回更新視窗
+useEffect(() => {
+  const handleClickOutside = (event: MouseEvent) => {
+    // 如果視窗是開著的，且點擊的地方不在 widget 範圍內，就關閉它
+    if (isWidgetOpen && widgetRef.current && !widgetRef.current.contains(event.target as Node)) {
+      setIsWidgetOpen(false);
+    }
+  };
+
+  document.addEventListener('mousedown', handleClickOutside);
+  return () => {
+    document.removeEventListener('mousedown', handleClickOutside);
+  };
+}, [isWidgetOpen]);
 
   const loadData = async () => {
     try {
@@ -237,8 +253,8 @@ export default function FrontPage({ onSwitchToAdmin }: { onSwitchToAdmin: () => 
               <option value="eol">已停產 (EOL)</option>
             </select>
           </div>
-
-          <div className={styles.filterItem} style={{ display: 'flex', alignItems: 'flex-end' }}>
+       </div>
+	             <div className={styles.filterItem} style={{ display: 'flex', alignItems: 'flex-end' }}>
             <button 
               style={{ width: '100%', padding: '9px', background: '#fff5f5', color: '#e03131', border: '1px solid #ffc9c9', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}
               onClick={() => setFilters({pn: '', name: '', machine: '', status: ''})}
@@ -246,7 +262,6 @@ export default function FrontPage({ onSwitchToAdmin }: { onSwitchToAdmin: () => 
               🧹 清除條件
             </button>
           </div>
-        </div>
       </div>
 
       {/* --- 極簡化表格 --- */}
@@ -365,7 +380,7 @@ export default function FrontPage({ onSwitchToAdmin }: { onSwitchToAdmin: () => 
 
 {/* 展開狀態：完整的資訊卡片 */}
           {isWidgetOpen && (
-            <div className={styles.updateWidget} style={{ display: 'flex', flexDirection: 'column' }}>
+            <div ref={widgetRef} className={styles.updateWidget} style={{ display: 'flex', flexDirection: 'column' }}>
               
               {/* 第一行：標題與返回按鈕 (橫向撐滿) */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', borderBottom: '1px solid #eee', paddingBottom: '8px', width: '100%' }}>
