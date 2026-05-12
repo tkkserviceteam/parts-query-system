@@ -991,7 +991,7 @@ export default function AdminPage({ onSwitchToFront }: { onSwitchToFront: () => 
                 {filteredParts.map(p => (
                   <tr key={p.id}>
                     <td style={{ textAlign: 'center' }}><input type="checkbox" checked={selectedPartIds.includes(p.id)} onChange={() => setSelectedPartIds(prev => prev.includes(p.id) ? prev.filter(i => i !== p.id) : [...prev, p.id])} /></td>
-                    <td style={{ fontWeight: 'bold' }} style={{ textAlign: 'center' }}>{p.pn}</td>
+                    <td style={{ fontWeight: 'bold', textAlign: 'center' }}>{p.pn}</td>
                     <td style={{ textAlign: 'center' }}>{p.name}</td>
 					<td style={{ textAlign: 'center' }}>{p.machine}</td>
                     <td style={{ textAlign: 'center' }}><span className={p.status === 'active' ? styles.badgeOk : styles.badgeObs}>{p.status === 'active' ? '有效' : '停用'}</span></td>
