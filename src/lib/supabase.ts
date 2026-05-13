@@ -21,6 +21,7 @@ export interface SubProject {
   id: number;
   project_key: string;
   name: string;
+  code_prefix?: string | null;
 }
 
 export interface Machine {
